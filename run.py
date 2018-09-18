@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 
 mazeName = '5level_binary_maze'
-nb_levels = 5
+nb_levels = 5 # total levels of maze: e.g. 5 levels = 4 levels of branching.
 
 reward_location = {(nb_levels - 1, 1): 1} # can be multiple
 
@@ -37,7 +37,8 @@ Session = Interact(Map = FiveLevelMaze,
 
 
 nb_episodes = 100
-nb_trials = 5
+nb_trials = 1
+
 for trial in range(nb_trials):
     # Start trial
     TD_Agent = Agent(agent_properties) # init / reset agent

@@ -153,8 +153,9 @@ class Agent:
     def egreedy_choice(self, values, actionspace):
         e = 0.1 # probablity of exploration
         rand = random.random()
-        # pdb.set_trace()
-        if rand > e:
+        print(values)
+        print(len(set(values)))
+        if rand > e and len(set(values)) > 1:
             # exploit
             argmax_V = np.argmax(values)
             chosen_action = actionspace[argmax_V]
