@@ -10,9 +10,10 @@ Parameters:
     value update:
         TD
             Lambda: 0 <= lambda < 1
+            todo: implement td lambda > 0
         MC
-        todo: implement eligibility trace
-        todo: soft-Q learning value estimation (right not only hardmax is implemented)
+            todo: implement eligibility trace
+            todo: soft-Q learning value estimation (right not only hardmax is implemented)
     exploration policy
         random (not dependent on values)
         e-greedy
@@ -150,7 +151,7 @@ class Agent:
                 self.Qfunction[self.curr_state,a] = 0
 
     def egreedy_choice(self, values, actionspace):
-        e = 0.4 # probablity of exploration
+        e = 0.1 # probablity of exploration
         rand = random.random()
         # pdb.set_trace()
         if rand > e:
@@ -180,7 +181,7 @@ class Agent:
         '''
 
         if self.prev_state is not None: # only start planning after 1st step
-            for i in range(self.planning_steps): # try different numbers here
+            for i in range(self.planning_steps):
                 random_stateaction = random.choice(list(self.Model.keys()))
                 next_rewardstate = self.Model[random_stateaction]
                 prev_state = random_stateaction[0]

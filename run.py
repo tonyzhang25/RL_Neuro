@@ -2,15 +2,14 @@ import numpy as np
 from Binary_Maze import *
 from Interact import *
 from Agent import *
+from Analysis import *
 import matplotlib.pyplot as plt
-from scipy import stats
-
 
 
 mazeName = '5level_binary_maze'
 nb_levels = 5
 
-reward_location = {(4,0): 1}
+reward_location = {(nb_levels - 1, 1): 1} # can be multiple
 
 env_properties = {
     'init_state': 0,
@@ -21,7 +20,7 @@ agent_properties = {
     'learning rate': 0.2,
     'value update': 'TD',
     'lambda': 0,
-    'exploration policy': 'softmax',
+    'exploration policy': 'e-greedy',
     'learn model': False,
     'discount rate': 0.9
 }
@@ -37,8 +36,8 @@ Session = Interact(Map = FiveLevelMaze,
                    properties = env_properties)
 
 
-nb_episodes = 500
-nb_trials = 1
+nb_episodes = 100
+nb_trials = 5
 for trial in range(nb_trials):
     # Start trial
     TD_Agent = Agent(agent_properties) # init / reset agent
@@ -47,11 +46,24 @@ for trial in range(nb_trials):
         # Start episode
         obs = Session.init_episode()
         action = TD_Agent.step(obs)
-        while obs[-1] == False:  # assert termination condition = False
+        termination = False
+        while termination == False:  # assert termination condition = False
             obs = Session.step(action)
             action = TD_Agent.step(obs)
+            termination = obs[-1]
         print('| TRIAL: ' + str(trial+1) +
               ' | Episode: '+str(episode+1) +
               ' | Reward = '+str(obs[-2]) + ' |')
+        # End of episode processing
+        Qvalues = TD_Agent.Qfunction  # obtain q values for analysis
+        Session.add_value_to_record(Qvalues)
+    # End of trial processing
+    Session.process_trial()
+
+
+## Analysis
+
+Analyze = Analysis(FiveLevelMaze, Session)
+Analyze.visualize()
 
 

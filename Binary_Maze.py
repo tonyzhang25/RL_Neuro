@@ -31,6 +31,7 @@ class Maze:
 
     def __init__(self, name, nb_levels, reward_location):
         assert nb_levels > 1
+        self.name = name
         self.nb_levels = nb_levels
         self.action_space = 2
         self.nb_states = 2 ** (nb_levels) - 1

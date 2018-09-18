@@ -38,9 +38,13 @@ class Interact:
         self.action_space = np.arange(self.Maze.action_space) # Based on environment
         ## instantiate history variables for evaluation / debugging
         self.state_act_history = [] # record of agent's state and picked actions
-        self.state_act_history_episodes = []
         self.state_obs_history = [] # record agent's observed state history (action spaces in current case)
+        self.state_act_history_episodes = []
         self.state_obs_history_episodes = []
+        self.state_act_history_trials = []
+        self.state_obs_history_trials = []
+        self.agent_qvalues_history_episodes = []
+        self.agent_qvalues_history_trials = []
         self.termination_condition = properties['episode_termination']
         self.episode_nb = 0
         if self.termination_condition == 'max_episode':
@@ -82,6 +86,7 @@ class Interact:
         reward = self.check_reward()
         termination = self.check_termination()
         output = self.return_observation(reward, termination)
+        #todo: think about where to save agent Q values
         return output
 
     def return_observation(self, reward, termination):
@@ -95,6 +100,23 @@ class Interact:
         combined_output_to_agent = [self.action_space, self.current_state, reward, termination]
         self.state_obs_history.append(combined_output_to_agent)
         return combined_output_to_agent
+
+    def process_trial(self):
+        # Call this after the end of a trialm before reinitializing agent to naive state.
+        # populates trial data into one
+        if len(self.state_obs_history_episodes) > 0:
+            self.state_obs_history_trials.append(self.state_obs_history_episodes)
+            self.state_act_history_trials.append(self.state_act_history_episodes)
+            # reset episode history memory
+            self.state_obs_history_episodes = []
+            self.state_act_history_episodes = []
+        if len(self.agent_qvalues_history_episodes) > 0:
+            self.agent_qvalues_history_trials.append(self.agent_qvalues_history_episodes)
+            self.agent_qvalues_history_episodes = []
+
+    def add_value_to_record(self, Qvalues):
+        self.agent_qvalues_history_episodes.append(Qvalues.copy())
+        # use .copy because of pointer issue with python dictionaries
 
     def check_reward(self):
         reward = self.Maze.state_reward_matrix[self.current_state]
