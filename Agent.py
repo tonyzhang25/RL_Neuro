@@ -153,8 +153,6 @@ class Agent:
     def egreedy_choice(self, values, actionspace):
         e = 0.1 # probablity of exploration
         rand = random.random()
-        print(values)
-        print(len(set(values)))
         if rand > e and len(set(values)) > 1:
             # exploit
             argmax_V = np.argmax(values)
