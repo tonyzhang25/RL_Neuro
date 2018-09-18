@@ -25,7 +25,8 @@ Note: Nothing is stored / modified in this object during learning.
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-import pdb
+import os, sys, glob
+
 
 class Maze:
 
@@ -43,6 +44,11 @@ class Maze:
         self.start_state = 0
         self.save_map(name)
         self.set_termination_states()
+
+    def init_save_path(self, path):
+        self.output_path = path
+        if not os.path.exists(path):
+            os.mkdir(path)
 
     def init_state_transition_map(self):
         self.state_trans_matrix = np.zeros((self.nb_states, self.action_space))
@@ -78,7 +84,8 @@ class Maze:
         self.termination_states = self.states_by_level[-1]
 
     def save_map(self, name):
-        np.savez('data/maps/'+name,
+        self.init_save_path('data/maps/')
+        np.savez(self.output_path + name,
                  state_trans_matrix = self.state_trans_matrix,
                 state_reward_matrix = self.state_reward_matrix)
         # print('** Maze successfully saved as .npz file: '+name)

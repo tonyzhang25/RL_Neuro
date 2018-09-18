@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os, sys, glob
 
+
 class Analysis:
 
     def __init__(self, Maze, Interact):
@@ -17,14 +18,18 @@ class Analysis:
         # History of combined Interact output to Agent
         self.state_obs_history = Interact.state_obs_history_trials
         self.value_history = Interact.agent_qvalues_history_trials
-        self.output_path = 'data/analysis/'
+        self.init_output_path('data/analysis/')
+
+    def init_output_path(self, path):
+        self.output_path = path
+        if not os.path.exists(path):
+            os.mkdir(path)
 
     def visualize(self):
         print('\nAnalyzing experiments..')
         self.visualize_reward_all_episodes()
         self.visualize_cumulative_reward()
         self.visualize_state_values()
-
 
     def visualize_reward_all_episodes(self):
         for trial_nb, trial_i in enumerate(self.state_obs_history):
