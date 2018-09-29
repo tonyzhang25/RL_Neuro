@@ -11,27 +11,30 @@ import os, sys, glob
 
 class Analysis:
 
-    def __init__(self, Maze, Interact):
+    def __init__(self, exp_path, sess_id, Maze, Interact):
+        self.exp_path = exp_path
+        self.sess_id = sess_id
         self.Map = Maze
         # History of [s_t, a_t, s_t+1] tupples
         self.state_action_history = Interact.state_act_history_trials
         # History of combined Interact output to Agent
         self.state_obs_history = Interact.state_obs_history_trials
         self.value_history = Interact.agent_qvalues_history_trials
-        self.init_output_path('data/analysis/')
+        self.init_sub_session_path()
 
-    def init_output_path(self, path):
-        self.output_path = path
-        if not os.path.exists(path):
-            os.mkdir(path)
+    def init_sub_session_path(self):
+        # Make session folder
+        self.sess_output_path = self.exp_path + '/sess_' + str(self.sess_id) + '/'
+        if not os.path.exists(self.sess_output_path):
+            os.mkdir(self.sess_output_path)
 
-    def visualize(self):
+    def visualize(self, dpi = 300):
         print('\nAnalyzing experiments..')
-        self.visualize_reward_all_episodes()
-        self.visualize_cumulative_reward()
-        self.visualize_state_values()
+        self.visualize_reward_all_episodes(dpi)
+        self.visualize_cumulative_reward(dpi)
+        self.visualize_state_values(dpi)
 
-    def visualize_reward_all_episodes(self):
+    def visualize_reward_all_episodes(self, dpi):
         for trial_nb, trial_i in enumerate(self.state_obs_history):
             nb_episodes = len(trial_i)
             reward_record = []
@@ -49,13 +52,13 @@ class Analysis:
             plt.xlim(0, nb_episodes+1)
             plt.ylim(-0.5,1.5)
             plt.ylabel('Reward')
-            plt.savefig(self.output_path + self.Map.name + '_t' +
+            plt.savefig(self.sess_output_path + self.Map.name + '_t' +
                         str(trial_nb) + '_reward_record.png',
-                        dpi = 500, bbox_inches = 'tight')
+                        dpi = dpi, bbox_inches = 'tight')
             plt.close()
         print('Reward log visualized.')
 
-    def visualize_cumulative_reward(self):
+    def visualize_cumulative_reward(self, dpi):
         for trial_nb, trial_i in enumerate(self.state_obs_history):
             nb_episodes = len(trial_i)
             reward_record = []
@@ -77,13 +80,13 @@ class Analysis:
             plt.xlim(1, nb_episodes+1)
             plt.ylim(0,)
             plt.ylabel('Cumulative Reward')
-            plt.savefig(self.output_path + self.Map.name + '_t' +
+            plt.savefig(self.sess_output_path + self.Map.name + '_t' +
                         str(trial_nb) + '_cumulative_reward.png',
-                        dpi = 500, bbox_inches = 'tight')
+                        dpi = dpi, bbox_inches = 'tight')
             plt.close()
         print('Cumulative reward plot visualized.')
 
-    def visualize_state_values(self):
+    def visualize_state_values(self, dpi):
         '''
         Visualize q value changes over episodes and trials.
         NOTE: this dictionary object may contain incomplete state access history,
@@ -104,8 +107,8 @@ class Analysis:
             plt.ylabel('Agent State-Action Value')
             plt.xlabel('Episode')
             plt.colorbar()
-            plt.savefig(self.output_path + self.Map.name + '_t' + str(trial_nb) +
-                        '_value_across_learning.png', dpi = 500, bbox_inches = 'tight')
+            plt.savefig(self.sess_output_path + self.Map.name + '_t' + str(trial_nb) +
+                        '_value_across_learning.png', dpi = dpi, bbox_inches = 'tight')
             plt.close()
             self.value_matrix = value_matrix
         print('Value learning visualized.')
