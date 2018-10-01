@@ -70,12 +70,13 @@ class Interact:
         '''
         this is called at the beginning of EACH episode.
         1. save history 2. clear history 3. reset environment reward functions
+        DEBUG: this function is problematic
         '''
         if self.episode_nb > 1: # only apply AFTER first episode
             self.Maze = deepcopy(self.Maze_original)
-            self.state_act_history_episodes.append(self.state_act_history)
-            self.state_obs_history_episodes.append(self.state_obs_history)
             self.state_act_history, self.state_obs_history = [], []
+        self.state_act_history_episodes.append(self.state_act_history)
+        self.state_obs_history_episodes.append(self.state_obs_history)
 
     def step(self, action):
         # get new state from environment class
@@ -86,7 +87,6 @@ class Interact:
         reward = self.check_reward()
         termination = self.check_termination()
         output = self.return_observation(reward, termination)
-        #todo: think about where to save agent Q values
         return output
 
     def return_observation(self, reward, termination):
@@ -102,7 +102,7 @@ class Interact:
         return combined_output_to_agent
 
     def process_trial(self):
-        # Call this after the end of a trialm before reinitializing agent to naive state.
+        # Call this after the end of a trial before reinitializing agent to naive state.
         # populates trial data into one
         if len(self.state_obs_history_episodes) > 0:
             self.state_obs_history_trials.append(self.state_obs_history_episodes)

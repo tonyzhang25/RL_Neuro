@@ -21,6 +21,7 @@ class Analysis:
         self.state_obs_history = Interact.state_obs_history_trials
         self.value_history = Interact.agent_qvalues_history_trials
         self.init_sub_session_path()
+        self.cumulative_rewards = [] # for all trials
 
     def init_sub_session_path(self):
         # Make session folder
@@ -84,6 +85,7 @@ class Analysis:
                         str(trial_nb) + '_cumulative_reward.png',
                         dpi = dpi, bbox_inches = 'tight')
             plt.close()
+            self.cumulative_rewards.append(reward_record)
         print('Cumulative reward plot visualized.')
 
     def visualize_state_values(self, dpi):
