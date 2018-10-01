@@ -72,11 +72,12 @@ class Interact:
         1. save history 2. clear history 3. reset environment reward functions
         DEBUG: this function is problematic
         '''
+        self.state_act_history_episodes.append(self.state_act_history)
+        self.state_obs_history_episodes.append(self.state_obs_history)
         if self.episode_nb > 1: # only apply AFTER first episode
             self.Maze = deepcopy(self.Maze_original)
             self.state_act_history, self.state_obs_history = [], []
-        self.state_act_history_episodes.append(self.state_act_history)
-        self.state_obs_history_episodes.append(self.state_obs_history)
+
 
     def step(self, action):
         # get new state from environment class

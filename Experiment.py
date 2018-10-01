@@ -76,15 +76,22 @@ class Experiment:
         x = np.arange(1, self.nb_episodes + 1)
         averages = np.average(cumulative_rewards, axis = 1)
         errors = np.std(cumulative_rewards, axis = 1)
+        # insert correct label
+        if self.exp_mode == 'multi-agent':
+            exp_label = 'Agent: '
+        elif self.exp_mode == 'multi-env':
+            exp_label = 'Environment: '
+        else: # multi-agent, multi-env
+            exp_label = 'Agent/Env: '
         for nb, (avg_i, err_i) in enumerate(zip(averages, errors)):
             upper_conf, lower_conf = avg_i + err_i, avg_i - err_i
             plt.fill_between(x, lower_conf, upper_conf, alpha = 0.2)
-            plt.plot(x, avg_i, linewidth=1.5, label = str(nb))
+            plt.plot(x, avg_i, linewidth=1.5, label = exp_label + str(nb + 1))
         ax = plt.axes()
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         plt.xlabel('Episode')
-        plt.xlim(1, self.nb_episodes + 1)
+        plt.xlim(1, self.nb_episodes)
         plt.ylim(0, )
         plt.ylabel('Cumulative Reward')
         plt.legend(frameon = False, loc = 'upper left')
@@ -105,6 +112,7 @@ class Experiment:
         for experiments involving one environment, and multiple agents
         '''
         print('Mode: multiple agents, single environment')
+        self.exp_mode = 'multi-agent'
         env = self.environments[0]
         self.init_cross_session_data(len(self.agents))
         for exp_id, agent_i in enumerate(self.agents):
@@ -116,6 +124,7 @@ class Experiment:
         for experiments involving one agent, and multiple environments
         '''
         print('Mode: multiple environments, single agent')
+        self.exp_mode = 'multi-env'
         agent = self.agents[0]
         self.init_cross_session_data(len(self.environments))
         for exp_id, env_i in enumerate(self.environments):
@@ -126,6 +135,7 @@ class Experiment:
         '''
         for experiments involving multiple environment and multiple agents
         '''
+        self.exp_mode = 'multi-agent, multi-env'
         print('Mode: multiple agents, multiple environments')
         self.init_cross_session_data(len(self.agents))
         for exp_id, (agent_i, env_i) in enumerate(zip(self.agents, self.environments)):
