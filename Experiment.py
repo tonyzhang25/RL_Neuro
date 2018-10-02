@@ -57,7 +57,7 @@ class Experiment:
             data.write('nb_trials = ' + str(self.nb_trials))
 
     def run_experiment(self):
-        print('Staring experiment..')
+        print('Starting experiment..')
         nb_environments = len(self.environments)
         nb_agents = len(self.agents)
         if nb_environments > 1 and nb_agents > 1:

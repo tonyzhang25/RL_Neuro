@@ -1,13 +1,13 @@
 from Experiment import *
 
 # Indicate experiment name
-experiment_name = 'softmax_vs_egreedy_vs_planning'
+experiment_name = 'MC_vs_TD'
 
 # Agent spec variable
 agents = [
     {
         'learning rate': 0.1,
-        'value update': 'TD',
+        'value update': 'MC',
         'lambda': 0,
         'exploration policy': 'e-greedy',
         'learn model': False,
@@ -17,26 +17,26 @@ agents = [
         'learning rate': 0.1,
         'value update': 'TD',
         'lambda': 0,
-        'exploration policy': 'softmax',
+        'exploration policy': 'e-greedy',
         'learn model': False,
         'discount rate': 0.9
     },
-    {
-        'learning rate': 0.1,
-        'value update': 'TD',
-        'lambda': 0,
-        'exploration policy': 'softmax',
-        'learn model': True,
-        'planning steps': 5
-    },
-    {
-        'learning rate': 0.1,
-        'value update': 'TD',
-        'lambda': 0,
-        'exploration policy': 'e-greedy',
-        'learn model': True,
-        'planning steps': 5
-    }
+    # {
+    #     'learning rate': 0.1,
+    #     'value update': 'TD',
+    #     'lambda': 0,
+    #     'exploration policy': 'softmax',
+    #     'learn model': True,
+    #     'planning steps': 5
+    # },
+    # {
+    #     'learning rate': 0.1,
+    #     'value update': 'TD',
+    #     'lambda': 0,
+    #     'exploration policy': 'e-greedy',
+    #     'learn model': True,
+    #     'planning steps': 5
+    # }
 ]
 
 # Environment spec variable

@@ -3,7 +3,7 @@ Agent. All agent interface occurs through 'step' function.
 Given obs, which is in the list format [curr action space, state, reward, termination]
 
 Agent that can learn / decide using multiple strategies
-Inputs: observation (partially observed state) and reward
+Inputs: state and reward
 Output: action
 Parameters:
     learning rate
@@ -48,7 +48,10 @@ class Agent:
                 else:
                     raise Exception('TD value updating mode instantiated under parameters.\n'
                                     'Please indicate lambda parameters (0 to 1)')
-
+            if self.learn_mode == 'MC':
+                self.init_MC_variables()
+            else:
+                self.use_memory = False
         else:
             raise Exception('Missing parameter: learning mode')
         if 'exploration policy' in parameters:
@@ -73,28 +76,97 @@ class Agent:
             self.Model = None
         self.Qfunction = {}
 
+    def init_memory(self):
+        self.use_memory = True
+        self.memory = []  # memory across episodes
+        self.episode_memory = []  # memory for current episode only
+
+    def init_MC_variables(self):
+        self.init_memory()
+        self.state_return_dict = {} # this keeps a list of returns for each visited state
+
     def step(self, obs):
-        self.curr_actionspace = obs[0]
-        self.curr_state = obs[1] # current set to integer state (0,1,2,...)
-        self.reward = obs[2]
-        self.termination = obs[-1]
-        # ONLY running if prev_state field is populated!
-        self.learn_value()
-        action = self.pick_action()
-        if self.Model is not None:
-            self.learn_model()
-            self.plan() # planning in the context of DynaQ. See Sutton & Barto.
-        # preparation for next step
-        self.prev_state = self.curr_state
-        self.prev_action = action
-        if self.termination:
-           # restart episode
-           self.prev_state = None
-           self.prev_action = None
+        if self.learn_mode == 'TD':
+            self.curr_actionspace = obs[0]
+            self.curr_state = obs[1] # current set to integer state (0,1,2,...)
+            self.reward = obs[2]
+            self.termination = obs[-1]
+            # ONLY running if prev_state field is populated!
+            if self.TD_lambda == 0: # one step update TD0
+                self.learn_TD0_value()
+            action = self.pick_action()
+            if self.Model is not None:
+                self.learn_model()
+                self.plan() # planning in the context of DynaQ. See Sutton & Barto.
+            # preparation for next step
+            self.prev_state = self.curr_state
+            self.prev_action = action
+            if self.use_memory: # eligibility trace
+                self.add_memory(obs, action)
+            if self.termination:
+                # restart episode
+                self.prev_state = None
+                self.prev_action = None
+
+        elif self.learn_mode == 'MC':
+            self.curr_actionspace = obs[0]
+            self.curr_state = obs[1] # current set to integer state (0,1,2,...)
+            self.reward = obs[2]
+            self.termination = obs[-1]
+            # ONLY running if prev_state field is populated!
+            action = self.pick_action()
+            # if self.Model is not None:
+            #     self.learn_model()
+            #     self.plan() # planning in the context of DynaQ. See Sutton & Barto.
+            # preparation for next step
+            self.prev_state = self.curr_state
+            self.prev_action = action
+            if self.use_memory: # eligibility trace
+                self.add_memory(obs, action)
+            if self.termination:
+                # UPDATE VALUES (end of every episode)
+                self.learn_MC_value()
+                # restart episode
+                self.prev_state = None
+                self.prev_action = None
+
 
         return action
 
-    def learn_value(self):
+    def add_memory(self, obs, action):
+        '''
+        This function keeps track of visited states for MC / multi step TD methods.
+        '''
+        state = obs[1]
+        reward = obs[-2]
+        terminate = obs[-1]
+        self.episode_memory.append([state, reward, action])
+        if terminate:
+            # Append memory of current episode to all memories
+            self.memory.append(self.episode_memory)
+            self.episode_memory = [] # clear episode memory
+
+    def learn_MC_value(self):
+        memory_episode = self.memory[-1] # pull out last episode memory
+        return_t = 0
+        for t in range(len(memory_episode) - 1, 0, -1):
+            # iterate backwards, from most recent state
+            reward = memory_episode[t][1]
+            prev_state = memory_episode[t-1][0]
+            prev_action = memory_episode[t-1][2]
+            return_t = return_t * self.discount_rate + reward
+            if (prev_state, prev_action) not in self.state_return_dict:
+                self.state_return_dict[prev_state, prev_action] = []
+            self.state_return_dict[prev_state, prev_action].append(return_t)
+            # update Q function through averaging
+            self.Qfunction[prev_state, prev_action] = np.average(self.state_return_dict[prev_state, prev_action])
+
+
+    def learn_TD0_value(self):
+        '''
+        This function can be used if learning is required after every step,
+        such as in the case of TD(0).
+        '''
         if self.prev_state is not None: # after 1st step only!
             actionspace = self.curr_actionspace
             max_value = -1 # arbitrary initial value less than 0
