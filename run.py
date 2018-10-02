@@ -21,22 +21,6 @@ agents = [
         'learn model': False,
         'discount rate': 0.9
     },
-    # {
-    #     'learning rate': 0.1,
-    #     'value update': 'TD',
-    #     'lambda': 0,
-    #     'exploration policy': 'softmax',
-    #     'learn model': True,
-    #     'planning steps': 5
-    # },
-    # {
-    #     'learning rate': 0.1,
-    #     'value update': 'TD',
-    #     'lambda': 0,
-    #     'exploration policy': 'e-greedy',
-    #     'learn model': True,
-    #     'planning steps': 5
-    # }
 ]
 
 # Environment spec variable
