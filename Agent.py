@@ -9,11 +9,12 @@ Parameters:
     learning rate
     value update:
         TD
-            Lambda: 0 <= lambda < 1
-            todo: implement td lambda > 0
+            pick one parameter below to specify:
+            1. Lambda: 0 <= lambda < 1
+            2. steps: >= 0
         MC
-            todo: implement eligibility trace
-            todo: soft-Q learning value estimation (right not only hardmax is implemented)
+        To understand differences between implementations of TD(1), TD(0), and MC:
+        http://www-anw.cs.umass.edu/~barto/courses/cs687/Chapter%207-printable.pdf
     exploration policy
         random (not dependent on values)
         e-greedy
@@ -39,19 +40,12 @@ class Agent:
         else:
             self.learn_rate = 0.1
             print('learn_rate = '+str(self.learn_rate))
-
         if 'value update' in parameters:
             self.learn_mode = parameters['value update']
             if self.learn_mode == 'TD':
-                if 'lambda' in parameters:
-                    self.TD_lambda = parameters['lambda']
-                else:
-                    raise Exception('TD value updating mode instantiated under parameters.\n'
-                                    'Please indicate lambda parameters (0 to 1)')
-            if self.learn_mode == 'MC':
+                self.init_TD_variables()
+            elif self.learn_mode == 'MC':
                 self.init_MC_variables()
-            else:
-                self.use_memory = False
         else:
             raise Exception('Missing parameter: learning mode')
         if 'exploration policy' in parameters:
@@ -85,52 +79,73 @@ class Agent:
         self.init_memory()
         self.state_return_dict = {} # this keeps a list of returns for each visited state
 
+    def init_TD_variables(self):
+        if 'lambda' in self.parameters:
+            self.TD_lambda = self.parameters['lambda']
+        else:
+            raise Exception('TD value updating mode instantiated under parameters.\n'
+                            'Please indicate lambda parameters (0 to 1)')
+        if self.TD_lambda > 0:
+            self.init_memory()
+        else:
+            self.use_memory = False
+
     def step(self, obs):
         if self.learn_mode == 'TD':
-            self.curr_actionspace = obs[0]
-            self.curr_state = obs[1] # current set to integer state (0,1,2,...)
-            self.reward = obs[2]
-            self.termination = obs[-1]
-            # ONLY running if prev_state field is populated!
-            if self.TD_lambda == 0: # one step update TD0
-                self.learn_TD0_value()
-            action = self.pick_action()
-            if self.Model is not None:
-                self.learn_model()
-                self.plan() # planning in the context of DynaQ. See Sutton & Barto.
-            # preparation for next step
-            self.prev_state = self.curr_state
-            self.prev_action = action
-            if self.use_memory: # eligibility trace
-                self.add_memory(obs, action)
-            if self.termination:
-                # restart episode
-                self.prev_state = None
-                self.prev_action = None
-
+            action = self.step_TD(obs)
         elif self.learn_mode == 'MC':
-            self.curr_actionspace = obs[0]
-            self.curr_state = obs[1] # current set to integer state (0,1,2,...)
-            self.reward = obs[2]
-            self.termination = obs[-1]
-            # ONLY running if prev_state field is populated!
-            action = self.pick_action()
-            # if self.Model is not None:
-            #     self.learn_model()
-            #     self.plan() # planning in the context of DynaQ. See Sutton & Barto.
-            # preparation for next step
-            self.prev_state = self.curr_state
-            self.prev_action = action
-            if self.use_memory: # eligibility trace
-                self.add_memory(obs, action)
-            if self.termination:
-                # UPDATE VALUES (end of every episode)
-                self.learn_MC_value()
-                # restart episode
-                self.prev_state = None
-                self.prev_action = None
+            action = self.step_MC(obs)
+        return action
 
+    def step_TD(self, obs):
+        self.curr_actionspace = obs[0]
+        self.curr_state = obs[1]  # current set to integer state (0,1,2,...)
+        self.reward = obs[2]
+        self.termination = obs[-1]
+        action = self.pick_action()
+        if self.use_memory:
+            # general purpose memory for use in eligibility trace
+            self.add_memory(obs, action)
+        # ONLY running if prev_state field is populated!
+        if self.TD_lambda == 0:
+            self.learn_TD0_value()
+        else:  # TD_lambda > 0:
+            self.learn_TDl_values()
+            # note: TD(lambda) is updated online, every episode
+            # in contrast with MC, which updates at the end of episodes
+        if self.Model is not None:
+            self.learn_model()
+            self.plan()  # planning in the context of DynaQ. See Sutton & Barto.
+        # preparation for next step
+        self.prev_state = self.curr_state
+        self.prev_action = action
+        if self.termination:
+            # restart episode
+            self.prev_state = None
+            self.prev_action = None
+        return action
 
+    def step_MC(self, obs):
+        self.curr_actionspace = obs[0]
+        self.curr_state = obs[1]  # current set to integer state (0,1,2,...)
+        self.reward = obs[2]
+        self.termination = obs[-1]
+        # ONLY running if prev_state field is populated!
+        action = self.pick_action()
+        # if self.Model is not None:
+        #     self.learn_model()
+        #     self.plan() # planning in the context of DynaQ. See Sutton & Barto.
+        # preparation for next step
+        self.prev_state = self.curr_state
+        self.prev_action = action
+        if self.use_memory:  # eligibility trace
+            self.add_memory(obs, action)
+        if self.termination:
+            # UPDATE VALUES (end of every episode)
+            self.learn_MC_value()
+            # restart episode
+            self.prev_state = None
+            self.prev_action = None
         return action
 
     def add_memory(self, obs, action):
@@ -146,6 +161,42 @@ class Agent:
             self.memory.append(self.episode_memory)
             self.episode_memory = [] # clear episode memory
 
+    def learn_TDl_values(self):
+        if len(self.memory) > 0 or len(self.episode_memory) > 0:
+            if len(self.episode_memory) > 0:
+                memory_episode = self.episode_memory
+            else:
+                memory_episode = self.memory[-1]
+            if len(memory_episode) >= 2: # only learn after there are two states visited
+                # compute target at current state
+                reward = memory_episode[-1][1]
+                curr_state = memory_episode[-1][0]
+                curr_action = memory_episode[-1][2]
+                prev_state = memory_episode[-2][0]
+                prev_action = memory_episode[-2][2]
+                if curr_action is not None: # not yet at a terminal state
+                    current_value = self.Qfunction[curr_state, curr_action]
+                else: # before reaching terminal state
+                    current_value = 0
+                    '''
+                    NOTE: this only works if the value of terminal state
+                    is the same as the reward, aka no more reward after.
+                    '''
+                prev_value = self.Qfunction[prev_state, prev_action]
+                delta_target = reward + self.discount_rate * current_value - prev_value
+                eligibility_t = 1
+                # pdb.set_trace()
+                for t in range(len(memory_episode) - 1, 0, -1): # iterate backwards
+                    # iterate backwards, from most recent state
+                    prev_state = memory_episode[t - 1][0]
+                    prev_action = memory_episode[t - 1][2]
+                    # Update Q function
+                    self.Qfunction[prev_state, prev_action] += \
+                        self.learn_rate * eligibility_t * delta_target
+                    eligibility_t *= self.TD_lambda * self.discount_rate
+
+
+
     def learn_MC_value(self):
         memory_episode = self.memory[-1] # pull out last episode memory
         return_t = 0
@@ -160,7 +211,6 @@ class Agent:
             self.state_return_dict[prev_state, prev_action].append(return_t)
             # update Q function through averaging
             self.Qfunction[prev_state, prev_action] = np.average(self.state_return_dict[prev_state, prev_action])
-
 
     def learn_TD0_value(self):
         '''

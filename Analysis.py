@@ -7,7 +7,7 @@ This file is currently designed to work with Binary_Maze.py
 import numpy as np
 import matplotlib.pyplot as plt
 import os, sys, glob
-
+import math
 
 class Analysis:
 
@@ -105,7 +105,9 @@ class Analysis:
                         value_matrix[row_nb, episode_nb] = episode_j[stateaction_k]
             # plot
             plt.figure(figsize = (6,4))
-            plt.pcolor(value_matrix)
+            plt.pcolor(value_matrix,
+                       vmin=math.floor(np.min(value_matrix)),
+                       vmax=math.ceil(np.max(value_matrix)))
             plt.ylabel('Agent State-Action Value')
             plt.xlabel('Episode')
             plt.colorbar()
@@ -113,6 +115,7 @@ class Analysis:
                         '_value_across_learning.png', dpi = dpi, bbox_inches = 'tight')
             plt.close()
             self.value_matrix = value_matrix
+            # USEFUL FOR DEBUGGING: print(np.max(value_matrix))
         print('Value learning visualized.')
 
 
