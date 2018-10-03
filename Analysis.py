@@ -32,6 +32,7 @@ class Analysis:
     def visualize(self, dpi = 300):
         print('\nAnalyzing experiments..')
         self.visualize_reward_all_episodes(dpi)
+        self.visualize_final_states(dpi)
         self.visualize_cumulative_reward(dpi)
         self.visualize_state_values(dpi)
 
@@ -59,6 +60,31 @@ class Analysis:
             plt.close()
         print('Reward log visualized.')
 
+    def visualize_final_states(self, dpi):
+        list_of_final_states = self.Map.states_by_level[-1]
+        min_state = list_of_final_states[0]
+        nb_final_states = len(list_of_final_states)
+        nb_episodes = len(self.state_obs_history[0])
+        for trial_nb, trial_i in enumerate(self.state_obs_history):
+            visual_matrix = np.zeros((nb_final_states, nb_episodes))
+            # extract last states
+            for episode_nb, episode_j in enumerate(trial_i):
+                state = episode_j[-1][1]
+                reward = episode_j[-1][-2] # think about how to visualize this
+                visual_matrix[state - min_state, episode_nb] = 1
+            # plot
+            plt.figure(figsize = (7,3))
+            plt.pcolor(visual_matrix, cmap=plt.cm.Blues,
+                       edgecolors='white', linewidths=0.5)
+            # put the major ticks at the middle of each cell
+            plt.yticks(np.arange(visual_matrix.shape[0]) + 0.5, list_of_final_states)
+            plt.ylabel('Final State Reached')
+            plt.xlabel('Episode')
+            plt.savefig(self.sess_output_path + self.Map.name + '_t' + str(trial_nb) +
+                        '_FinalState.png', dpi = dpi, bbox_inches = 'tight')
+            plt.close()
+        print('Final State Visited visualized.')
+
     def visualize_cumulative_reward(self, dpi):
         for trial_nb, trial_i in enumerate(self.state_obs_history):
             nb_episodes = len(trial_i)
@@ -78,7 +104,7 @@ class Analysis:
             ax.spines['top'].set_visible(False)
             ax.spines['right'].set_visible(False)
             plt.xlabel('Episode')
-            plt.xlim(1, nb_episodes+1)
+            plt.xlim(1, nb_episodes)
             plt.ylim(0,)
             plt.ylabel('Cumulative Reward')
             plt.savefig(self.sess_output_path + self.Map.name + '_t' +

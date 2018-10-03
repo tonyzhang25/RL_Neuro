@@ -1,7 +1,7 @@
 from Experiment import *
 
 # Indicate experiment name
-experiment_name = 'TDlambdas'
+experiment_name = 'TD_v_MC'
 
 # Agent spec variable
 agents = [
@@ -42,9 +42,11 @@ agents = [
 environments = [
     {
         'maze name': '5level_binary_maze',
-        'number of levels': 5,
-        'reward locations': {(4, 4): 1}
+        'number of levels': 5, # last level is terminal
+        'reward locations': {(4, 4): 1} # index from 0
     }
+    # To test additional environments,
+    # Insert here (must match with number of agents)
 ]
 
 
@@ -53,5 +55,5 @@ Experiment = Experiment(name = experiment_name,
                         environments = environments,
                         agents = agents,
                         nb_episodes = 100,
-                        nb_trials = 20)
+                        nb_trials = 10)
 Experiment.run_experiment()
