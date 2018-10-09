@@ -7,19 +7,19 @@ Maze maps and visualizations are saved under /data.
 ### Agent Parameters:
 1. learning rate
 2. value update
-  - TD: pick one parameter below to specify:
-    - Lambda: 0 <= lambda < 1
-    - steps: >= 0
- - MC
+   - TD: pick one parameter below to specify:
+      - Lambda: 0 <= lambda < 1
+      - steps: >= 0
+  - MC
     To understand differences between implementations of TD(1), TD(0), and MC:
     http://www-anw.cs.umass.edu/~barto/courses/cs687/Chapter%207-printable.pdf
 3. Exploration policy
-  - Random (not dependent on values)
-    - E-greedy
-    - Softmax
+   - Random (not dependent on values)
+      - E-greedy
+      - Softmax
 4. Learn model
-  - Specify model learning for Dyna-Q algorithm.
-  - Need to specify number of planning steps in addition.
+   - Specify model learning for Dyna-Q algorithm.
+   - Need to specify number of planning steps in addition.
 
 ### Environments Parameters:
 1. Name: string description. Used to save map under data/maze.
