@@ -10,8 +10,8 @@ Maze maps and visualizations are saved under /data.
    - TD: pick one parameter below to specify:
       - Lambda: 0 <= lambda < 1
       - steps: >= 0
-  - MC
-    To understand differences between implementations of TD(1), TD(0), and MC:
+   - MC
+   - To understand differences between implementations of TD(1), TD(0), and MC:
     http://www-anw.cs.umass.edu/~barto/courses/cs687/Chapter%207-printable.pdf
 3. Exploration policy
    - Random (not dependent on values)
