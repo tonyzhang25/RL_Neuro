@@ -52,6 +52,10 @@ class Agent:
             self.exploration_policy = parameters['exploration policy']
         else:
             raise Exception('Missing parameter: exploration policy')
+        if 'probabilistic agent state' in parameters:
+            self.probabilistic = parameters['probabilistic agent state']
+        else:
+            self.probabilistic = False
         if 'discount rate' in parameters:
             self.discount_rate = parameters['discount rate']
         else:
@@ -90,11 +94,17 @@ class Agent:
         else:
             self.use_memory = False
 
-    def step(self, obs):
+    def step(self, env_obs):
+        '''
+        :param obs:
+         env_obs[0] = action space (what actions agent could take from environment)
+         env_obs[1] = state (tabular)
+        '''
+        agent_obs = self.determine_agent_state(env_obs)
         if self.learn_mode == 'TD':
-            action = self.step_TD(obs)
+            action = self.step_TD(agent_obs)
         elif self.learn_mode == 'MC':
-            action = self.step_MC(obs)
+            action = self.step_MC(agent_obs)
         return action
 
     def step_TD(self, obs):
@@ -125,6 +135,36 @@ class Agent:
             self.prev_action = None
         return action
 
+    def determine_agent_state(self, env_obs, p_random = 0.3):
+        '''
+        Optional. Use when
+        1) agent has probabilistic memory
+        or
+        2) agent has superstitious actions (actions outside of set of environment action space)
+        '''
+        if self.probabilistic:
+            if random.random() > p_random:
+                agent_obs = env_obs
+            else:
+                all_visited_states = self.find_states_visited()
+                if all_visited_states is not None:
+                    state = np.random.choice(all_visited_states)
+                    env_obs[1] = state # change perceived current state
+                agent_obs = env_obs
+        else:
+            agent_obs = env_obs
+        return agent_obs
+
+    def find_states_visited(self):
+        '''find states visited from q function'''
+        state_action_pairs = np.array(list(self.Qfunction.keys()))
+        if len(state_action_pairs) > 0:
+            states = list(set(state_action_pairs[:,0]))
+        else:
+            states = None
+        return states
+
+
     def step_MC(self, obs):
         self.curr_actionspace = obs[0]
         self.curr_state = obs[1]  # current set to integer state (0,1,2,...)
@@ -150,7 +190,7 @@ class Agent:
 
     def add_memory(self, obs, action):
         '''
-        This function keeps track of visited states for MC / multi step TD methods.
+        This function keeps track of visited states within an episode for MC / multi step TD methods.
         '''
         state = obs[1]
         reward = obs[-2]
