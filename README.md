@@ -20,6 +20,10 @@ Maze maps and visualizations are saved under /data.
 4. Learn model
    - Specify model learning for Dyna-Q algorithm.
    - Need to specify number of planning steps in addition.
+5. probabilistic agent state
+   - set to True or False (False is Default)
+   - Introduce uncertainty in agent state
+   - Randomness currently parameterized through p_random under Agent.py
 
 ### Environments Parameters:
 1. Name: string description. Used to save map under data/maze.
