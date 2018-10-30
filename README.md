@@ -1,5 +1,7 @@
 # RL_Neuro
 
+Requirements: Python 3.6, numpy
+
 To run experiments, first clone the repo (master branch), then modify dictionary parameters under run.py and execute.
 Maze maps and visualizations are saved under /data.
 
