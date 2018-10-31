@@ -30,6 +30,7 @@ class Experiment:
         self.exp_data = []
         self.init_output_path(root_path = 'data/analysis/')
         self.save_configs()
+        self.run_experiment()
 
     def init_output_path(self, root_path):
         # Make root path (data/analysis) if not present
@@ -71,11 +72,6 @@ class Experiment:
         self.plot_comparison_visuals()
 
     def plot_comparison_visuals(self):
-        cumulative_rewards = self.all_cumulative_rewards
-        plt.figure(figsize=(6, 4))
-        x = np.arange(1, self.nb_episodes + 1)
-        averages = np.average(cumulative_rewards, axis = 1)
-        errors = np.std(cumulative_rewards, axis = 1)
         # insert correct label
         if self.exp_mode == 'multi-agent':
             exp_label = 'Agent: '
@@ -83,6 +79,18 @@ class Experiment:
             exp_label = 'Environment: '
         else: # multi-agent, multi-env
             exp_label = 'Agent/Env: '
+
+        self.plot_comparison_cumulative_rewards(exp_label)
+        self.plot_comparison_timesteps_til_terminate(exp_label)
+        print('Experiment-level comparison plots visualized.')
+
+    def plot_comparison_cumulative_rewards(self, exp_label):
+        cumulative_rewards = self.all_cumulative_rewards
+        plt.figure(figsize=(6, 4))
+        x = np.arange(1, self.nb_episodes + 1)
+        averages = np.average(cumulative_rewards, axis = 1)
+        errors = np.std(cumulative_rewards, axis = 1)
+
         for nb, (avg_i, err_i) in enumerate(zip(averages, errors)):
             upper_conf, lower_conf = avg_i + err_i, avg_i - err_i
             plt.fill_between(x, lower_conf, upper_conf, alpha = 0.2)
@@ -95,15 +103,39 @@ class Experiment:
         plt.ylim(0, )
         plt.ylabel('Cumulative Reward')
         plt.legend(frameon = False, loc = 'upper left')
-        plt.savefig(self.exp_output_path + '/'
-                    'Experiment_cumulative_reward_comparisons.png',
+        plt.savefig(f"{self.exp_output_path}/Experiment_cumulative_reward_comparisons.png",
                     dpi=350, bbox_inches='tight')
         plt.close()
         np.save(self.exp_output_path+'/'+'cumulative_reward_data.npy', cumulative_rewards)
-        print('Comparison plots visualized.')
+
+    def plot_comparison_timesteps_til_terminate(self, exp_label):
+        timeteps_per_episode = self.all_timeteps_perepisode
+        plt.figure(figsize=(6, 4))
+        x = np.arange(1, self.nb_episodes + 1)
+        averages = np.average(timeteps_per_episode, axis = 1)
+        errors = np.std(timeteps_per_episode, axis = 1)
+
+        for nb, (avg_i, err_i) in enumerate(zip(averages, errors)):
+            upper_conf, lower_conf = avg_i + err_i, avg_i - err_i
+            plt.fill_between(x, lower_conf, upper_conf, alpha = 0.2)
+            plt.plot(x, avg_i, linewidth=1.5, label = exp_label + str(nb + 1))
+        ax = plt.axes()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        plt.xlabel('Episode')
+        plt.xlim(1, self.nb_episodes)
+        plt.ylabel('Timesteps Until Termination')
+        plt.legend(frameon = False, loc = 'upper left')
+        plt.savefig(f"{self.exp_output_path}/Experiment_timesteps_over_episodes_plot.png",
+                    dpi=350, bbox_inches='tight')
+        plt.close()
+        np.save(f"{self.exp_output_path}/timesteps_over_episodes_data.npy", timeteps_per_episode)
 
     def init_cross_session_data(self, nb_sessions):
         self.all_cumulative_rewards = np.zeros((nb_sessions,
+                                                self.nb_trials,
+                                                self.nb_episodes))
+        self.all_timeteps_perepisode = np.zeros((nb_sessions,
                                                 self.nb_trials,
                                                 self.nb_episodes))
 
@@ -148,7 +180,9 @@ class Experiment:
         mazeName = env_i_properties['maze name']
         nb_levels = env_i_properties['number of levels']
         reward_location = env_i_properties['reward locations']
-        self.Maze_current = Maze(mazeName, nb_levels = nb_levels, reward_location = reward_location)
+        allow_reversals = env_i_properties['allow reversals']
+        self.Maze_current = Maze(mazeName, nb_levels = nb_levels, reward_location = reward_location,
+                                 allow_reversals = allow_reversals)
         self.Session_current = Interact(Map = self.Maze_current, properties = self.env_settings)
 
 
@@ -189,3 +223,4 @@ class Experiment:
             Analyze.visualize(dpi = 300)
             ## Obtain session data for cross-session analysis
             self.all_cumulative_rewards[exp_id] = np.array(Analyze.cumulative_rewards)
+            self.all_timeteps_perepisode[exp_id] = np.array(Analyze.all_timesteps_trial)

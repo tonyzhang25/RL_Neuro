@@ -79,9 +79,11 @@ class Interact:
             self.state_act_history, self.state_obs_history = [], []
 
 
-    def step(self, action):
+    def step(self, action, verbose = False):
         # get new state from environment class
         new_state = int(self.Maze.state_trans_matrix[self.current_state, action])
+        if verbose:
+            print(f"| Action: {action} | New State: {new_state}")
         # save to history
         self.state_act_history.append([self.current_state, action, new_state])
         self.current_state = new_state # set new state to current state

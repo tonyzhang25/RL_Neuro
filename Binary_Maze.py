@@ -13,13 +13,15 @@ Parameters:
 
 Variables:
     Actions: 2 (0 or 1)
-    Transition matrix: [State(t), action(t), state(t+1)]
+    Transition matrix: State(t+1) = state_transition_matrix[State(t), action(t)]
     All variables are fixed. Transition matrix is instantiated based on parameter 'levels'
 
 Each state ALWAYS has 2 actions. For custom mazes with arbitrary action space in grid space,
 use Maze.py
 
 Note: Nothing is stored / modified in this object during learning.
+
+# todo: implement reversal
 
 '''
 import numpy as np
@@ -30,15 +32,18 @@ import os, sys, glob
 
 class Maze:
 
-    def __init__(self, name, nb_levels, reward_location):
+    def __init__(self, name, nb_levels, reward_location, allow_reversals = True):
         assert nb_levels > 1
         self.name = name
         self.nb_levels = nb_levels
-        self.action_space = 2
+        self.allow_reversals = allow_reversals
+        if self.allow_reversals:
+            self.action_space = 3
+        else:
+            self.action_space = 2
         self.nb_states = 2 ** (nb_levels) - 1
         self.assign_states_to_levels()
         self.init_state_transition_map()
-        self.compute_trans_map()
         self.reward_locations = reward_location
         self.init_reward()
         self.start_state = 0
@@ -52,6 +57,7 @@ class Maze:
 
     def init_state_transition_map(self):
         self.state_trans_matrix = np.zeros((self.nb_states, self.action_space))
+        self.compute_trans_map()
 
     def assign_states_to_levels(self):
         self.states_by_level = []
@@ -63,14 +69,39 @@ class Maze:
             curr_state = curr_state+nb_states_in_level_i
 
     def compute_trans_map(self):
+        # for level_i in range(self.nb_levels):
+        #     if level_i < self.nb_levels - 1: # before reaching final layer
+        #         for pos, state_j in enumerate(self.states_by_level[level_i]):
+        #             next_level = level_i + 1
+        #             next_state_a0_position = pos*2
+        #             next_state_a0 = self.states_by_level[next_level][next_state_a0_position]
+        #             next_state_a1 = next_state_a0 + 1
+        #             self.state_trans_matrix[state_j] = [next_state_a0, next_state_a1]
+        # ### allow reversals
+        # if self.allow_reversals:
         for level_i in range(self.nb_levels):
-            if level_i < self.nb_levels - 1: # before reaching final layer
+            if level_i < self.nb_levels - 1:  # before reaching final layer
                 for pos, state_j in enumerate(self.states_by_level[level_i]):
+                    next_states = []
                     next_level = level_i + 1
-                    next_state_a0_position = pos*2
+                    next_state_a0_position = pos * 2
                     next_state_a0 = self.states_by_level[next_level][next_state_a0_position]
                     next_state_a1 = next_state_a0 + 1
-                    self.state_trans_matrix[state_j] = [next_state_a0, next_state_a1]
+                    next_states.append(next_state_a0) # next level, action L
+                    next_states.append(next_state_a1) # next level, action R
+                    if self.allow_reversals:
+                        if level_i > 0:
+                            if pos % 2 == 0:
+                                prev_state_pos = pos // 2
+                            else:
+                                prev_state_pos = (pos - 1) // 2
+                            prev_state = self.states_by_level[level_i - 1][prev_state_pos]
+                        else:
+                            prev_state = 0
+                        next_states.append(prev_state)
+                    self.state_trans_matrix[state_j] = next_states
+        # import pdb
+        # pdb.set_trace()
 
     def init_reward(self):
         self.state_reward_matrix = np.zeros(self.nb_states)

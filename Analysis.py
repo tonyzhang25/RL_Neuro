@@ -10,6 +10,10 @@ import os, sys, glob
 import math
 
 class Analysis:
+    '''
+    These are trial-level visualizations. They do not work for comparing experiment-level stats.
+    Cross session comparisons are implemented under Experiment.py
+    '''
 
     def __init__(self, exp_path, sess_id, Maze, Interact):
         self.exp_path = exp_path
@@ -22,6 +26,7 @@ class Analysis:
         self.value_history = Interact.agent_qvalues_history_trials
         self.init_sub_session_path()
         self.cumulative_rewards = [] # for all trials
+        self.all_timesteps_trial = [] # for the entire trial
 
     def init_sub_session_path(self):
         # Make session folder
@@ -30,11 +35,12 @@ class Analysis:
             os.mkdir(self.sess_output_path)
 
     def visualize(self, dpi = 300):
-        print('\nAnalyzing experiments..')
+        print('\nAnalyzing session data..')
         self.visualize_reward_all_episodes(dpi)
         self.visualize_final_states(dpi)
         self.visualize_cumulative_reward(dpi)
         self.visualize_state_values(dpi)
+        self.visualize_timesteps_per_episode(dpi)
 
     def visualize_reward_all_episodes(self, dpi):
         for trial_nb, trial_i in enumerate(self.state_obs_history):
@@ -70,7 +76,6 @@ class Analysis:
             # extract last states
             for episode_nb, episode_j in enumerate(trial_i):
                 state = episode_j[-1][1]
-                reward = episode_j[-1][-2] # think about how to visualize this
                 visual_matrix[state - min_state, episode_nb] = 1
             # plot
             plt.figure(figsize = (7,3))
@@ -84,6 +89,30 @@ class Analysis:
                         '_FinalState.png', dpi = dpi, bbox_inches = 'tight')
             plt.close()
         print('Final State Visited visualized.')
+
+    def visualize_timesteps_per_episode(self, dpi):
+        for trial_nb, trial_i in enumerate(self.state_obs_history):
+            episodes_length = []
+            for episode_nb, episode_j in enumerate(trial_i):
+                episode_length = len(episode_j)
+                episodes_length.append(episode_length)
+            nb_episodes = len(trial_i)
+            # plot
+            plt.figure(figsize = (5,3.5))
+            x = np.arange(nb_episodes) + 1
+            plt.plot(x, episodes_length, color = 'C1', linewidth = 2)
+            ax = plt.axes()
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            plt.xlabel('Episode')
+            plt.xlim(1, nb_episodes)
+            plt.ylabel('Time Steps Until Termination)')
+            plt.savefig(self.sess_output_path + self.Map.name + '_t' +
+                        str(trial_nb) + '_timesteps_per_episode.png',
+                        dpi = dpi, bbox_inches = 'tight')
+            plt.close()
+            self.all_timesteps_trial.append(episodes_length)
+        print('Timesteps per episode plotted.')
 
     def visualize_cumulative_reward(self, dpi):
         for trial_nb, trial_i in enumerate(self.state_obs_history):
@@ -112,7 +141,7 @@ class Analysis:
                         dpi = dpi, bbox_inches = 'tight')
             plt.close()
             self.cumulative_rewards.append(reward_record)
-        print('Cumulative reward plot visualized.')
+        print('Cumulative rewards across episodes plotted.')
 
     def visualize_state_values(self, dpi):
         '''
