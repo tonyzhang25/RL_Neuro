@@ -72,6 +72,8 @@ class Agent:
                                 'Please indicate the number of planning steps (> 0).')
         else:
             self.Model = None
+        if parameters['add exploration bonus']:
+            self.exploration_bonus = {}  # format: key = (state, action), content = value between 0 and 1
         self.Qfunction = {}
 
     def init_memory(self):
@@ -105,7 +107,33 @@ class Agent:
             action = self.step_TD(agent_obs)
         elif self.learn_mode == 'MC':
             action = self.step_MC(agent_obs)
+        if self.parameters['add exploration bonus']:
+            # import pdb; pdb.set_trace()
+            if action is not None: # not terminal
+                # reduce novelty for current state-action
+                self.reduce_state_novelty(action)
+                # increase novelty for all other pairs
+                # self.increase_state_novelty(action)
         return action
+
+    def reduce_state_novelty(self, action, min_novelty = 0, reduction = 0.5):
+        '''reduce novelty associated for current state action pair'''
+        bonus_current = self.exploration_bonus[self.curr_state, action]
+        if bonus_current > min_novelty:
+            bonus_reduced = bonus_current - reduction
+            if bonus_reduced < 0: bonus_reduced = 0
+            self.exploration_bonus[self.curr_state, action] = bonus_reduced
+
+    def increase_state_novelty(self, action, min_novelty = 0, max_novelty = 1, rate = 0.2):
+        # increase novelty for all state action pairs NOT selected
+        curr_state_action = (self.curr_state, action)
+        all_state_actions = list(self.exploration_bonus.keys())
+        all_state_actions.remove(curr_state_action)
+        for state_action in all_state_actions:
+            bonus_current = self.exploration_bonus[state_action]
+            diff = max_novelty - bonus_current
+            bonus_new =+ rate * diff
+            self.exploration_bonus[state_action] = bonus_new
 
     def step_TD(self, obs):
         self.curr_actionspace = obs[0]
@@ -223,6 +251,11 @@ class Agent:
                     is the same as the reward, aka no more reward after.
                     '''
                 prev_value = self.Qfunction[prev_state, prev_action]
+                if self.parameters['add exploration bonus']:
+                    # if curr_action is not None: # todo: QA
+                    # novelty_bonus = self.exploration_bonus[curr_state, curr_action]
+                    novelty_bonus = self.exploration_bonus[prev_state, prev_action] # is this correct?
+                    reward += novelty_bonus
                 delta_target = reward + self.discount_rate * current_value - prev_value
                 eligibility_t = 1
                 # pdb.set_trace()
@@ -291,6 +324,8 @@ class Agent:
             return None
         actionspace = self.curr_actionspace
         values = []
+        if self.parameters['add exploration bonus']:
+            self.init_exploration_bonus(actionspace)
         self.init_values(actionspace)
             ## softmax
         for a in actionspace:
@@ -306,11 +341,24 @@ class Agent:
 
     def init_values(self, actionspace):
         '''
-        This function ensures that all the Q(s,a) have values attached to them. If not, assign random.
+        This function ensures that all the Q(s,a) have initial values attached to them.
         '''
         for a in actionspace:
             if (self.curr_state, a) not in self.Qfunction.keys():
-                self.Qfunction[self.curr_state,a] = 0
+                if self.parameters['add exploration bonus']:
+                    init_value = self.exploration_bonus[self.curr_state, a] # todo: QA
+                    init_value = 0 # todo: QA
+                else:
+                    init_value = 0
+                self.Qfunction[self.curr_state, a] = init_value
+
+    def init_exploration_bonus(self, actionspace, max_bonus = 1):
+        '''
+        This function ensures that all the e(s,a) have values attached to them. If not, assign random.
+        '''
+        for a in actionspace:
+            if (self.curr_state, a) not in self.exploration_bonus.keys():
+                self.exploration_bonus[self.curr_state,a] = max_bonus
 
     def egreedy_choice(self, values, actionspace):
         e = 0.1 # probablity of exploration

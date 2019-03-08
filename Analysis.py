@@ -24,6 +24,7 @@ class Analysis:
         # History of combined Interact output to Agent
         self.state_obs_history = Interact.state_obs_history_trials
         self.value_history = Interact.agent_qvalues_history_trials
+        self.novelty_history = Interact.agent_novelty_history_trials
         self.init_sub_session_path()
         self.cumulative_rewards = [] # for all trials
         self.all_timesteps_trial = [] # for the entire trial
@@ -36,10 +37,12 @@ class Analysis:
 
     def visualize(self, dpi = 300):
         print('\nAnalyzing session data..')
+        self.compare_total_steps_till_reward(dpi)
         self.visualize_reward_all_episodes(dpi)
         self.visualize_final_states(dpi)
         self.visualize_cumulative_reward(dpi)
         self.visualize_state_values(dpi)
+        self.visualize_state_novelty(dpi)
         self.visualize_timesteps_per_episode(dpi)
 
     def visualize_reward_all_episodes(self, dpi):
@@ -114,6 +117,24 @@ class Analysis:
             self.all_timesteps_trial.append(episodes_length)
         print('Timesteps per episode plotted.')
 
+    def compare_total_steps_till_reward(self, dpi):
+        ''' compute how many total steps it takes until first reward is encountered
+        state_obs_history: trials, episodes, timesteps within episode
+        '''
+        self.steps = []
+        for trial_nb, trial_i in enumerate(self.state_obs_history):
+            steps_trial_i = 0
+            for episode_nb, episode_j in enumerate(trial_i):
+                for obs_t in episode_j:
+                    reward = obs_t[2]
+                    if reward > 0:
+                        break
+                    else:
+                        steps_trial_i += 1
+                if reward > 0: break
+            self.steps.append(steps_trial_i)
+
+
     def visualize_cumulative_reward(self, dpi):
         for trial_nb, trial_i in enumerate(self.state_obs_history):
             nb_episodes = len(trial_i)
@@ -172,6 +193,36 @@ class Analysis:
             self.value_matrix = value_matrix
             # USEFUL FOR DEBUGGING: print(np.max(value_matrix))
         print('Value learning visualized.')
+
+    def visualize_state_novelty(self, dpi):
+        '''
+        Visualize q value changes over episodes and trials.
+        NOTE: this dictionary object may contain incomplete state access history,
+        due to the nature of the exploration policy.
+        '''
+        for trial_nb, trial_i in enumerate(self.novelty_history):
+            visited_stateactions = list(trial_i[-1])
+            visited_stateactions.sort()
+            nb_episodes = len(trial_i)
+            novelty_matrix = np.zeros((len(visited_stateactions), nb_episodes))
+            for episode_nb, episode_j in enumerate(trial_i):
+                for row_nb, stateaction_k in enumerate(visited_stateactions):
+                    if stateaction_k in episode_j:
+                        novelty_matrix[row_nb, episode_nb] = episode_j[stateaction_k]
+            # plot
+            plt.figure(figsize = (6,4))
+            plt.pcolor(novelty_matrix,
+                       vmin=math.floor(np.min(novelty_matrix)),
+                       vmax=math.ceil(np.max(novelty_matrix)))
+            plt.ylabel('Agent State-Action Value')
+            plt.xlabel('Episode')
+            plt.colorbar()
+            plt.savefig(self.sess_output_path + self.Map.name + '_t' + str(trial_nb) +
+                        '_novelty_across_learning.png', dpi = dpi, bbox_inches = 'tight')
+            plt.close()
+            self.value_matrix = novelty_matrix
+            # USEFUL FOR DEBUGGING: print(np.max(value_matrix))
+        print('Novelty visualized.')
 
 
 

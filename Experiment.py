@@ -82,6 +82,7 @@ class Experiment:
 
         self.plot_comparison_cumulative_rewards(exp_label)
         self.plot_comparison_timesteps_til_terminate(exp_label)
+        self.plot_comparison_steps_til_reward(exp_label)
         print('Experiment-level comparison plots visualized.')
 
     def plot_comparison_cumulative_rewards(self, exp_label):
@@ -107,6 +108,21 @@ class Experiment:
                     dpi=350, bbox_inches='tight')
         plt.close()
         np.save(self.exp_output_path+'/'+'cumulative_reward_data.npy', cumulative_rewards)
+
+    def plot_comparison_steps_til_reward(self, exp_label):
+        all_steps = self.timesteps_until_reward
+        plt.figure(figsize = (4,4))
+        plt.boxplot(np.transpose(all_steps), showmeans=True, whis = 'range')
+        plt.xlabel('Agent')
+        plt.ylabel('Steps until first reward encounter')
+        plt.savefig(f"{self.exp_output_path}/Experiment_steps_till_reward.png",
+                    dpi=350, bbox_inches='tight')
+        import pdb; pdb.set_trace()
+
+    def plot_unique_states_visited(self):
+        '''Plot unique states visited until reward'''
+
+        pass
 
     def plot_comparison_timesteps_til_terminate(self, exp_label):
         timeteps_per_episode = self.all_timeteps_perepisode
@@ -138,6 +154,8 @@ class Experiment:
         self.all_timeteps_perepisode = np.zeros((nb_sessions,
                                                 self.nb_trials,
                                                 self.nb_episodes))
+        self.timesteps_until_reward = np.zeros((nb_sessions,
+                                                self.nb_trials))
 
     def multi_agent(self):
         '''
@@ -206,13 +224,18 @@ class Experiment:
                     obs = Session_current.step(action)
                     action = Agent_current.step(obs)
                     termination = obs[-1]
+                # update logs
+                Session_current.update_logs()
                 if verbose:
-                    print('| TRIAL: ' + str(trial + 1) +
+                    print('| EXP: ' + str(exp_id+1) +
+                          ' | Trial: ' + str(trial + 1) +
                           ' | Episode: ' + str(episode + 1) +
                           ' | Reward = ' + str(obs[-2]) + ' |')
                 # End of episode processing
                 Qvalues = Agent_current.Qfunction  # obtain q values for analysis
                 Session_current.add_value_to_record(Qvalues)
+                if agent_spec['add exploration bonus']:
+                    Session_current.add_novelty_to_record(Agent_current.exploration_bonus)
             # End of trial processing
             Session_current.process_trial()
 
@@ -224,3 +247,4 @@ class Experiment:
             ## Obtain session data for cross-session analysis
             self.all_cumulative_rewards[exp_id] = np.array(Analyze.cumulative_rewards)
             self.all_timeteps_perepisode[exp_id] = np.array(Analyze.all_timesteps_trial)
+            self.timesteps_until_reward[exp_id] = np.array(Analyze.steps)

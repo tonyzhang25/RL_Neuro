@@ -45,6 +45,8 @@ class Interact:
         self.state_obs_history_trials = []
         self.agent_qvalues_history_episodes = []
         self.agent_qvalues_history_trials = []
+        self.agent_novelty_history_episodes = []
+        self.agent_novelty_history_trials = []
         self.termination_condition = properties['episode_termination']
         self.episode_nb = 0
         if self.termination_condition == 'max_episode':
@@ -71,12 +73,19 @@ class Interact:
         this is called at the beginning of EACH episode.
         1. save history 2. clear history 3. reset environment reward functions
         DEBUG: this function is problematic
+        todo: debug. problem: currently each new trial is affixing the same sequence of
+        steps for the first episode, regardless of the actual events
         '''
-        self.state_act_history_episodes.append(self.state_act_history)
-        self.state_obs_history_episodes.append(self.state_obs_history)
+        # self.state_act_history_episodes.append(self.state_act_history)
+        # self.state_obs_history_episodes.append(self.state_obs_history)
+        '''todo: figure out why the above two lines were present previously'''
         if self.episode_nb > 1: # only apply AFTER first episode
             self.Maze = deepcopy(self.Maze_original)
             self.state_act_history, self.state_obs_history = [], []
+
+    def update_logs(self):
+        self.state_act_history_episodes.append(self.state_act_history)
+        self.state_obs_history_episodes.append(self.state_obs_history)
 
 
     def step(self, action, verbose = False):
@@ -116,9 +125,16 @@ class Interact:
         if len(self.agent_qvalues_history_episodes) > 0:
             self.agent_qvalues_history_trials.append(self.agent_qvalues_history_episodes)
             self.agent_qvalues_history_episodes = []
+        if len(self.agent_novelty_history_episodes) > 0:
+            self.agent_novelty_history_trials.append(self.agent_novelty_history_episodes)
+            self.agent_novelty_history_episodes = []
 
     def add_value_to_record(self, Qvalues):
         self.agent_qvalues_history_episodes.append(Qvalues.copy())
+        # use .copy because of pointer issue with python dictionaries
+
+    def add_novelty_to_record(self, novelty):
+        self.agent_novelty_history_episodes.append(novelty.copy())
         # use .copy because of pointer issue with python dictionaries
 
     def check_reward(self):
