@@ -107,16 +107,16 @@ class Agent:
             action = self.step_TD(agent_obs)
         elif self.learn_mode == 'MC':
             action = self.step_MC(agent_obs)
-        if self.parameters['add exploration bonus']:
-            # import pdb; pdb.set_trace()
-            if action is not None: # not terminal
-                # reduce novelty for current state-action
-                self.reduce_state_novelty(action)
-                # increase novelty for all other pairs
-                # self.increase_state_novelty(action)
+        # if self.parameters['add exploration bonus']:
+        #     # import pdb; pdb.set_trace()
+        #     if action is not None: # not terminal
+        #         # reduce novelty for current state-action
+        #         self.reduce_state_novelty(action)
+        #         # increase novelty for all other pairs
+        #         # self.increase_state_novelty(action)
         return action
 
-    def reduce_state_novelty(self, action, min_novelty = 0, reduction = 0.5):
+    def reduce_state_novelty(self, action, min_novelty = 0, reduction = 1):
         '''reduce novelty associated for current state action pair'''
         bonus_current = self.exploration_bonus[self.curr_state, action]
         if bonus_current > min_novelty:
@@ -135,12 +135,23 @@ class Agent:
             bonus_new =+ rate * diff
             self.exploration_bonus[state_action] = bonus_new
 
+    def update_novelty(self, action):
+        # import pdb; pdb.set_trace()
+        if action is not None: # not terminal
+            # reduce novelty for current state-action
+            self.reduce_state_novelty(action)
+            # increase novelty for all other pairs
+            # self.increase_state_novelty(action)
+
     def step_TD(self, obs):
-        self.curr_actionspace = obs[0]
         self.curr_state = obs[1]  # current set to integer state (0,1,2,...)
+        self.curr_actionspace = obs[0]
         self.reward = obs[2]
-        self.termination = obs[-1]
+        self.terminate = obs[-1]
         action = self.pick_action()
+        # update novelty below. Must be done before value updates occurs
+        if self.parameters['add exploration bonus']:
+            self.update_novelty(action)
         if self.use_memory:
             # general purpose memory for use in eligibility trace
             self.add_memory(obs, action)
@@ -157,7 +168,7 @@ class Agent:
         # preparation for next step
         self.prev_state = self.curr_state
         self.prev_action = action
-        if self.termination:
+        if self.terminate:
             # restart episode
             self.prev_state = None
             self.prev_action = None
@@ -197,7 +208,7 @@ class Agent:
         self.curr_actionspace = obs[0]
         self.curr_state = obs[1]  # current set to integer state (0,1,2,...)
         self.reward = obs[2]
-        self.termination = obs[-1]
+        self.terminate = obs[-1]
         # ONLY running if prev_state field is populated!
         action = self.pick_action()
         # if self.Model is not None:
@@ -208,7 +219,7 @@ class Agent:
         self.prev_action = action
         if self.use_memory:  # eligibility trace
             self.add_memory(obs, action)
-        if self.termination:
+        if self.terminate:
             # UPDATE VALUES (end of every episode)
             self.learn_MC_value()
             # restart episode
@@ -320,12 +331,12 @@ class Agent:
                 self.Model[self.prev_state, self.prev_action] = (self.reward, self.curr_state)
 
     def pick_action(self):
-        if self.termination:
+        if self.terminate:
             return None
         actionspace = self.curr_actionspace
         values = []
         if self.parameters['add exploration bonus']:
-            self.init_exploration_bonus(actionspace)
+            self.init_novelty(actionspace)
         self.init_values(actionspace)
             ## softmax
         for a in actionspace:
@@ -339,20 +350,23 @@ class Agent:
             chosen_action = self.random_choice(actionspace)
         return chosen_action
 
-    def init_values(self, actionspace):
+    def init_values(self, actionspace, lr = 0.2):
         '''
         This function ensures that all the Q(s,a) have initial values attached to them.
         '''
         for a in actionspace:
             if (self.curr_state, a) not in self.Qfunction.keys():
                 if self.parameters['add exploration bonus']:
-                    init_value = self.exploration_bonus[self.curr_state, a] # todo: QA
-                    init_value = 0 # todo: QA
+                    init_value = 0
+                    novelty = self.exploration_bonus[self.curr_state, a]
+                    diff = novelty - init_value
+                    init_value = init_value + lr * diff
+                    # init_value = self.exploration_bonus[self.curr_state, a] # todo: QA
                 else:
                     init_value = 0
                 self.Qfunction[self.curr_state, a] = init_value
 
-    def init_exploration_bonus(self, actionspace, max_bonus = 1):
+    def init_novelty(self, actionspace, max_bonus = 1):
         '''
         This function ensures that all the e(s,a) have values attached to them. If not, assign random.
         '''
@@ -360,8 +374,11 @@ class Agent:
             if (self.curr_state, a) not in self.exploration_bonus.keys():
                 self.exploration_bonus[self.curr_state,a] = max_bonus
 
+        # now, update value function. Note that this process is different from initializing Q functions
+
     def egreedy_choice(self, values, actionspace):
-        e = 0.1 # probablity of exploration
+        # probablity of exploration
+        e = self.parameters['epsilon']
         rand = random.random()
         if rand > e and len(set(values)) > 1:
             # exploit

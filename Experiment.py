@@ -117,11 +117,9 @@ class Experiment:
         plt.ylabel('Steps until first reward encounter')
         plt.savefig(f"{self.exp_output_path}/Experiment_steps_till_reward.png",
                     dpi=350, bbox_inches='tight')
-        import pdb; pdb.set_trace()
 
     def plot_unique_states_visited(self):
         '''Plot unique states visited until reward'''
-
         pass
 
     def plot_comparison_timesteps_til_terminate(self, exp_label):

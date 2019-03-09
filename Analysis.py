@@ -40,7 +40,7 @@ class Analysis:
         self.compare_total_steps_till_reward(dpi)
         self.visualize_reward_all_episodes(dpi)
         self.visualize_final_states(dpi)
-        self.visualize_cumulative_reward(dpi)
+        self.log_cumulative_reward(dpi = dpi)
         self.visualize_state_values(dpi)
         self.visualize_state_novelty(dpi)
         self.visualize_timesteps_per_episode(dpi)
@@ -134,8 +134,7 @@ class Analysis:
                 if reward > 0: break
             self.steps.append(steps_trial_i)
 
-
-    def visualize_cumulative_reward(self, dpi):
+    def log_cumulative_reward(self, plot = False, dpi = 300):
         for trial_nb, trial_i in enumerate(self.state_obs_history):
             nb_episodes = len(trial_i)
             reward_record = []
@@ -145,24 +144,28 @@ class Analysis:
                     reward_record.append(reward_record[episode_nb-1] + reward)
                 else:
                     reward_record.append(reward)
-            plt.figure(figsize = (4,3))
-            x = np.arange(nb_episodes)
-            plt.plot(x+1, reward_record,
-                        color = 'C2',
-                        linewidth = 1.5)
-            ax = plt.axes()
-            ax.spines['top'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            plt.xlabel('Episode')
-            plt.xlim(1, nb_episodes)
-            plt.ylim(0,)
-            plt.ylabel('Cumulative Reward')
-            plt.savefig(self.sess_output_path + self.Map.name + '_t' +
-                        str(trial_nb) + '_cumulative_reward.png',
-                        dpi = dpi, bbox_inches = 'tight')
-            plt.close()
+            if plot:
+                self.plot_cumulative_reward(dpi, nb_episodes, reward_record, trial_nb)
+                print('Cumulative rewards across episodes plotted.')
             self.cumulative_rewards.append(reward_record)
-        print('Cumulative rewards across episodes plotted.')
+
+    def plot_cumulative_reward(self, dpi, nb_episodes, reward_record, trial_nb):
+        plt.figure(figsize=(4, 3))
+        x = np.arange(nb_episodes)
+        plt.plot(x + 1, reward_record,
+                 color='C2',
+                 linewidth=1.5)
+        ax = plt.axes()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        plt.xlabel('Episode')
+        plt.xlim(1, nb_episodes)
+        plt.ylim(0, )
+        plt.ylabel('Cumulative Reward')
+        plt.savefig(self.sess_output_path + self.Map.name + '_t' +
+                    str(trial_nb) + '_cumulative_reward.png',
+                    dpi=dpi, bbox_inches='tight')
+        plt.close()
 
     def visualize_state_values(self, dpi):
         '''
