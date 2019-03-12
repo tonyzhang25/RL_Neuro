@@ -1,7 +1,7 @@
 from Experiment import *
 
 # Indicate experiment name
-experiment_name = 'exploration_bonus_greedy_e0_7level_reversal'
+experiment_name = 'exploration_bonus_greedy_e0_4level_reversal'
 
 # Agent spec variable
 lr = 0.2
@@ -9,7 +9,7 @@ agents = [
     {
         'learning rate': lr,
         'value update': 'TD',
-        'lambda': 0.9,
+        'lambda': 0.6,
         'exploration policy': 'e-greedy',
         'epsilon': 0,
         'learn model': False,
@@ -19,7 +19,7 @@ agents = [
     {
         'learning rate': lr,
         'value update': 'TD',
-        'lambda': 0.9,
+        'lambda': 0.6   ,
         'exploration policy': 'e-greedy',
         'epsilon': 0,
         'learn model': False,
@@ -33,8 +33,8 @@ agents = [
 environments = [
     {
         'maze name': '5level_binary_maze',
-        'number of levels': 7, # last level is terminal
-        'reward locations': {(6, 3): 10}, # index from 0
+        'number of levels': 4, # last level is terminal
+        'reward locations': {(3, 2): 10}, # index from 0
         'allow reversals': True
     },
     # # To test additional environments, insert here (must match with number of agents)
@@ -51,5 +51,5 @@ environments = [
 Experiment = Experiment(name = experiment_name,
                         environments = environments,
                         agents = agents,
-                        nb_episodes = 60,
-                        nb_trials = 50)
+                        nb_episodes = 50,
+                        nb_trials = 1000)

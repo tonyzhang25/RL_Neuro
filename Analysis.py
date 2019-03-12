@@ -52,16 +52,16 @@ class Analysis:
             for episode_nb, episode_j in enumerate(trial_i):
                 reward = episode_j[-1][-2]
                 reward_record.append(reward)
-            plt.figure(figsize = (10,0.8))
+            plt.figure(figsize = (10,1))
             x = np.arange(nb_episodes)
             plt.scatter(x + 1, reward_record,
                         s = 20,
                         facecolor = (0,0,0,0),
-                        linewidths = 0.4,
+                        linewidths = 0.6,
                         edgecolor = 'C3')
             plt.xlabel('Episode')
             plt.xlim(0, nb_episodes+1)
-            plt.ylim(-0.5,1.5)
+            plt.ylim(-1, max(reward_record) + 1)
             plt.ylabel('Reward')
             plt.savefig(self.sess_output_path + self.Map.name + '_t' +
                         str(trial_nb) + '_reward_record.png',
