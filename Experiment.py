@@ -18,6 +18,7 @@ from Analysis import *
 class Experiment:
 
     def __init__(self, name, environments, agents, nb_episodes, nb_trials):
+        self.verbose = True
         self.name = name
         self.environments = environments
         self.agents = agents
@@ -109,13 +110,21 @@ class Experiment:
         plt.close()
         np.save(self.exp_output_path+'/'+'cumulative_reward_data.npy', cumulative_rewards)
 
+    # def plot_comparison_plots(self, exp_label, data, ):
+
     def plot_comparison_steps_til_reward(self, exp_label):
         all_steps = self.timesteps_until_reward
         plt.figure(figsize = (4,4))
         plt.boxplot(np.transpose(all_steps), showmeans=True, whis = 'range')
         plt.xlabel('Agent')
+        ax = plt.axes()
+        ax.set_yscale('log')
         plt.ylabel('Steps until first reward encounter')
-        plt.savefig(f"{self.exp_output_path}/Experiment_steps_till_reward.png",
+        plt.savefig(f"{self.exp_output_path}/Experiment_steps_till_reward_log.png",
+                    dpi=350, bbox_inches='tight')
+        # plots for linear axis
+        ax.set_yscale('linear')
+        plt.savefig(f"{self.exp_output_path}/Experiment_steps_till_reward_linear.png",
                     dpi=350, bbox_inches='tight')
 
     def plot_unique_states_visited(self):
@@ -165,7 +174,7 @@ class Experiment:
         self.init_cross_session_data(len(self.agents))
         for exp_id, agent_i in enumerate(self.agents):
             self.init_env_and_session(env)
-            self.baseloop(agent_i, exp_id)
+            self.baseloop(agent_i, exp_id, verbose = self.verbose)
 
     def multi_environment(self):
         '''
@@ -177,7 +186,7 @@ class Experiment:
         self.init_cross_session_data(len(self.environments))
         for exp_id, env_i in enumerate(self.environments):
             self.init_env_and_session(env_i)
-            self.baseloop(agent, exp_id)
+            self.baseloop(agent, exp_id, verbose = self.verbose)
 
     def multi_agent_multi_environment(self):
         '''
@@ -188,7 +197,7 @@ class Experiment:
         self.init_cross_session_data(len(self.agents))
         for exp_id, (agent_i, env_i) in enumerate(zip(self.agents, self.environments)):
             self.init_env_and_session(env_i)
-            self.baseloop(agent_i, exp_id)
+            self.baseloop(agent_i, exp_id, verbose = self.verbose)
 
 
     def init_env_and_session(self, env_i_properties):
@@ -212,7 +221,6 @@ class Experiment:
             # Get session and environment objects
             Session_current, Maze_current = self.Session_current, self.Maze_current
             # Start trial
-            print()
             for episode in range(self.nb_episodes):
                 # Start episode
                 obs = Session_current.init_episode()

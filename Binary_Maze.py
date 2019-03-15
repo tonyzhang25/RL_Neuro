@@ -21,8 +21,6 @@ use Maze.py
 
 Note: Nothing is stored / modified in this object during learning.
 
-# todo: implement reversal
-
 '''
 import numpy as np
 import matplotlib.pyplot as plt

@@ -135,11 +135,11 @@ class Agent:
             bonus_new =+ rate * diff
             self.exploration_bonus[state_action] = bonus_new
 
-    def update_novelty(self, action):
+    def update_novelty(self, action, reduction):
         # import pdb; pdb.set_trace()
         if action is not None: # not terminal
             # reduce novelty for current state-action
-            self.reduce_state_novelty(action)
+            self.reduce_state_novelty(action, reduction = reduction)
             # increase novelty for all other pairs
             # self.increase_state_novelty(action)
 
@@ -151,7 +151,8 @@ class Agent:
         action = self.pick_action()
         # update novelty below. Must be done before value updates occurs
         if self.parameters['add exploration bonus']:
-            self.update_novelty(action)
+            reduction = self.parameters['reduction']
+            self.update_novelty(action, reduction)
         if self.use_memory:
             # general purpose memory for use in eligibility trace
             self.add_memory(obs, action)
