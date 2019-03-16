@@ -40,7 +40,7 @@ class Analysis:
         self.compare_total_steps_till_reward(dpi)
         self.visualize_reward_all_episodes(dpi)
         self.visualize_final_states(dpi)
-        self.log_cumulative_reward(dpi = dpi)
+        self.log_reward(dpi = dpi)
         self.visualize_state_values(dpi)
         self.visualize_state_novelty(dpi)
         self.visualize_timesteps_per_episode(dpi)
@@ -137,7 +137,7 @@ class Analysis:
                 if reward > 0: break
             self.steps.append(steps_trial_i)
 
-    def log_cumulative_reward(self, plot = False, dpi = 300):
+    def log_reward(self, plot = False, dpi = 300):
         for trial_nb, trial_i in enumerate(self.state_obs_history):
             nb_episodes = len(trial_i)
             reward_record = []
@@ -149,11 +149,11 @@ class Analysis:
                 else:
                     reward_record.append(reward)
             if plot:
-                self.plot_cumulative_reward(dpi, nb_episodes, reward_record, trial_nb)
-                print('Cumulative rewards across episodes plotted.')
+                self.plot_reward(dpi, nb_episodes, reward_record, trial_nb)
+                print('Trial-averaged rewards across episodes plotted.')
             self.cumulative_rewards.append(reward_record)
 
-    def plot_cumulative_reward(self, dpi, nb_episodes, reward_record, trial_nb):
+    def plot_reward(self, dpi, nb_episodes, reward_record, trial_nb):
         plt.figure(figsize=(4, 3))
         x = np.arange(nb_episodes)
         plt.plot(x + 1, reward_record,
@@ -165,9 +165,9 @@ class Analysis:
         plt.xlabel('Episode')
         plt.xlim(1, nb_episodes)
         plt.ylim(0, )
-        plt.ylabel('Cumulative Reward')
+        plt.ylabel('Reward')
         plt.savefig(self.sess_output_path + self.Map.name + '_t' +
-                    str(trial_nb) + '_cumulative_reward.png',
+                    str(trial_nb) + '_episode_reward.png',
                     dpi=dpi, bbox_inches='tight')
         plt.close()
 
@@ -223,7 +223,7 @@ class Analysis:
                 plt.pcolor(novelty_matrix,
                            vmin=math.floor(np.min(novelty_matrix)),
                            vmax=math.ceil(np.max(novelty_matrix)))
-                plt.ylabel('Agent State-Action Value')
+                plt.ylabel('Agent State-Action Novelty')
                 plt.xlabel('Episode')
                 plt.colorbar()
                 plt.savefig(self.sess_output_path + self.Map.name + '_t' + str(trial_nb) +

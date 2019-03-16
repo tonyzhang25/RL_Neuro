@@ -22,20 +22,19 @@ Properties:
 '''
 import numpy as np
 from copy import deepcopy
+from Binary_Maze import *
 import pdb
 
 
 class Interact:
 
-    def __init__(self, Map, properties):
+    def __init__(self, init_properties, maze_properties):
         '''
         NOTE: agent should not have access to any variables in this section.
         These variables are for tracking progress for evaluation / debug purposes.
         '''
-        self.Maze_original = Map # origianl maze. Make copy of this object every new episode (reward function purpose)
-        self.Maze = deepcopy(Map)# for manipulation purposes (rewards etc)
-        self.properties = properties
-        self.action_space = np.arange(self.Maze.action_space) # Based on environment
+        self.maze_properties = maze_properties
+        self.properties = init_properties
         ## instantiate history variables for evaluation / debugging
         self.state_act_history = [] # record of agent's state and picked actions
         self.state_obs_history = [] # record agent's observed state history (action spaces in current case)
@@ -47,14 +46,14 @@ class Interact:
         self.agent_qvalues_history_trials = []
         self.agent_novelty_history_episodes = []
         self.agent_novelty_history_trials = []
-        self.termination_condition = properties['episode_termination']
+        self.termination_condition = init_properties['episode_termination']
         self.episode_nb = 0
         if self.termination_condition == 'max_episode':
-            self.max_steps = properties['max_steps'] # integer referring to max number of steps
+            self.max_steps = init_properties['max_steps'] # integer referring to max number of steps
 
-    def init_episode(self):
+    def init_episode(self, episode):
         self.episode_nb += 1
-        self.reset_environment()
+        self.reset_environment(episode)
         if self.properties['init_state'] == 'random':
             self.init_state = np.random.randint(self.Maze.nb_states)
         else: # specific state
@@ -68,19 +67,23 @@ class Interact:
         output = self.return_observation(reward, term)
         return output
 
-    def reset_environment(self):
+    def reset_environment(self, episode):
         '''
         this is called at the beginning of EACH episode.
         1. save history 2. clear history 3. reset environment reward functions
-        DEBUG: this function is problematic
-        todo: debug. problem: currently each new trial is affixing the same sequence of
         steps for the first episode, regardless of the actual events
+        New: episode being passed in here in order to accomodate
+        changing of reward location within a trial.
         '''
-        # self.state_act_history_episodes.append(self.state_act_history)
-        # self.state_obs_history_episodes.append(self.state_obs_history)
-        '''todo: figure out why the above two lines were present previously'''
-        if self.episode_nb > 1: # only apply AFTER first episode
-            self.Maze = deepcopy(self.Maze_original)
+        if self.episode_nb > 0: # only apply AFTER first episode
+            # self.Maze = deepcopy(self.Maze_original)
+            mazeName = self.maze_properties['maze name']
+            nb_levels = self.maze_properties['number of levels']
+            reward_location = self.maze_properties['reward locations']
+            allow_reversals = self.maze_properties['allow reversals']
+            self.Maze = Maze(mazeName, nb_levels=nb_levels, reward_location=reward_location,
+                                     allow_reversals=allow_reversals)
+            self.action_space = np.arange(self.Maze.action_space)  # Based on environment
             self.state_act_history, self.state_obs_history = [], []
 
     def update_logs(self):

@@ -173,7 +173,7 @@ class Experiment:
         env = self.environments[0]
         self.init_cross_session_data(len(self.agents))
         for exp_id, agent_i in enumerate(self.agents):
-            self.init_env_and_session(env)
+            self.init_session(env)
             self.baseloop(agent_i, exp_id, verbose = self.verbose)
 
     def multi_environment(self):
@@ -185,7 +185,7 @@ class Experiment:
         agent = self.agents[0]
         self.init_cross_session_data(len(self.environments))
         for exp_id, env_i in enumerate(self.environments):
-            self.init_env_and_session(env_i)
+            self.init_session(env_i)
             self.baseloop(agent, exp_id, verbose = self.verbose)
 
     def multi_agent_multi_environment(self):
@@ -196,19 +196,16 @@ class Experiment:
         print('Mode: multiple agents, multiple environments')
         self.init_cross_session_data(len(self.agents))
         for exp_id, (agent_i, env_i) in enumerate(zip(self.agents, self.environments)):
-            self.init_env_and_session(env_i)
+            self.init_session(env_i)
             self.baseloop(agent_i, exp_id, verbose = self.verbose)
 
 
-    def init_env_and_session(self, env_i_properties):
-        # self.Agent_current = Agent(agent_properties)
-        mazeName = env_i_properties['maze name']
-        nb_levels = env_i_properties['number of levels']
-        reward_location = env_i_properties['reward locations']
-        allow_reversals = env_i_properties['allow reversals']
-        self.Maze_current = Maze(mazeName, nb_levels = nb_levels, reward_location = reward_location,
-                                 allow_reversals = allow_reversals)
-        self.Session_current = Interact(Map = self.Maze_current, properties = self.env_settings)
+    def init_session(self, env_i_properties):
+        '''
+        Note new change: environment initialization has been moved to episode
+        to accomodate reward shifting
+        '''
+        self.Session_current = Interact(init_properties = self.env_settings, maze_properties = env_i_properties)
 
 
     def baseloop(self, agent_spec, exp_id, visualize_sessions = True, verbose = True):
@@ -219,11 +216,11 @@ class Experiment:
             # Init fresh incarnation of agent
             Agent_current = Agent(agent_spec)
             # Get session and environment objects
-            Session_current, Maze_current = self.Session_current, self.Maze_current
+            Session_current = self.Session_current
             # Start trial
             for episode in range(self.nb_episodes):
                 # Start episode
-                obs = Session_current.init_episode()
+                obs = Session_current.init_episode(episode)
                 action = Agent_current.step(obs)
                 termination = False
                 while termination == False:  # assert termination condition = False
@@ -248,7 +245,7 @@ class Experiment:
         ## Session analysis
         if visualize_sessions:
             Analyze = Analysis(self.exp_output_path, exp_id,
-                               Maze_current, Session_current)
+                               Session_current.Maze, Session_current)
             Analyze.visualize(dpi = 300)
             ## Obtain session data for cross-session analysis
             self.all_cumulative_rewards[exp_id] = np.array(Analyze.cumulative_rewards)

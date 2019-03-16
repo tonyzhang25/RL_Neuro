@@ -28,16 +28,16 @@ agents = [
         'add exploration bonus': True,
         'reduction': 1
     },
-    {
-        'learning rate': lr,
-        'value update': 'TD',
-        'lambda': 0.1,
-        'exploration policy': 'e-greedy',
-        'epsilon': 0,
-        'learn model': False,
-        'discount rate': 0.9,
-        'add exploration bonus': False
-    },
+    # {
+    #     'learning rate': lr,
+    #     'value update': 'TD',
+    #     'lambda': 0.1,
+    #     'exploration policy': 'e-greedy',
+    #     'epsilon': 0,
+    #     'learn model': False,
+    #     'discount rate': 0.9,
+    #     'add exploration bonus': False
+    # },
     # To test additional agents, insert here
 ]
 

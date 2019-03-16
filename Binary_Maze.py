@@ -103,6 +103,7 @@ class Maze:
 
     def init_reward(self):
         self.state_reward_matrix = np.zeros(self.nb_states)
+        # if type(self.reward_locations)
         for reward_loc in self.reward_locations:
             level, pos = reward_loc[0], reward_loc[1]
             state = self.states_by_level[level][pos]
