@@ -70,21 +70,32 @@ class Interact:
     def reset_environment(self, episode):
         '''
         this is called at the beginning of EACH episode.
-        1. save history 2. clear history 3. reset environment reward functions
+        1. clear history 2. reset environment
         steps for the first episode, regardless of the actual events
-        New: episode being passed in here in order to accomodate
+        New: episode being passed in here in order to accommodate
         changing of reward location within a trial.
         '''
         if self.episode_nb > 0: # only apply AFTER first episode
             # self.Maze = deepcopy(self.Maze_original)
-            mazeName = self.maze_properties['maze name']
-            nb_levels = self.maze_properties['number of levels']
-            reward_location = self.maze_properties['reward locations']
-            allow_reversals = self.maze_properties['allow reversals']
-            self.Maze = Maze(mazeName, nb_levels=nb_levels, reward_location=reward_location,
-                                     allow_reversals=allow_reversals)
-            self.action_space = np.arange(self.Maze.action_space)  # Based on environment
+            self.create_maze(episode)
             self.state_act_history, self.state_obs_history = [], []
+
+    def create_maze(self, episode):
+        mazeName = self.maze_properties['maze name']
+        nb_levels = self.maze_properties['number of levels']
+        reward_location = self.maze_properties['reward locations']
+        allow_reversals = self.maze_properties['allow reversals']
+        if self.maze_properties['change reward location']:
+            change_episodes = list(reward_location.keys())
+            change_episodes.reverse()
+            for ep_change in change_episodes:
+                if episode >= ep_change:
+                    reward_location = reward_location[ep_change]
+                    break
+        self.Maze = Maze(mazeName, nb_levels=nb_levels, reward_location=reward_location,
+                         allow_reversals=allow_reversals)
+        self.action_space = np.arange(self.Maze.action_space)  # Based on environment
+
 
     def update_logs(self):
         self.state_act_history_episodes.append(self.state_act_history)

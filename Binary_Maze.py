@@ -30,7 +30,7 @@ import os, sys, glob
 
 class Maze:
 
-    def __init__(self, name, nb_levels, reward_location, allow_reversals = True):
+    def __init__(self, name, nb_levels, reward_location, allow_reversals = True, save = False):
         assert nb_levels > 1
         self.name = name
         self.nb_levels = nb_levels
@@ -45,7 +45,8 @@ class Maze:
         self.reward_locations = reward_location
         self.init_reward()
         self.start_state = 0
-        self.save_map(name)
+        if save:
+            self.save_map(name)
         self.set_termination_states()
 
     def init_save_path(self, path):

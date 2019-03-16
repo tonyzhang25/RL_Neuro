@@ -369,7 +369,7 @@ class Agent:
 
     def init_novelty(self, actionspace, max_bonus = 1):
         '''
-        This function ensures that all the e(s,a) have values attached to them. If not, assign random.
+        This function ensures that all the e(s,a) have values attached to them. If not, assign.
         '''
         for a in actionspace:
             if (self.curr_state, a) not in self.exploration_bonus.keys():
@@ -381,7 +381,7 @@ class Agent:
         # probablity of exploration
         e = self.parameters['epsilon']
         rand = random.random()
-        if rand > e and len(set(values)) > 1:
+        if rand >= e and len(set(values)) > 1:
             # exploit
             argmax_V = np.argmax(values)
             chosen_action = actionspace[argmax_V]

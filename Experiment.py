@@ -87,11 +87,11 @@ class Experiment:
         print('Experiment-level comparison plots visualized.')
 
     def plot_comparison_cumulative_rewards(self, exp_label):
-        cumulative_rewards = self.all_cumulative_rewards
+        rewards = self.all_cumulative_rewards
         plt.figure(figsize=(6, 4))
         x = np.arange(1, self.nb_episodes + 1)
-        averages = np.average(cumulative_rewards, axis = 1)
-        errors = np.std(cumulative_rewards, axis = 1)
+        averages = np.average(rewards, axis = 1)
+        errors = np.std(rewards, axis = 1)
 
         for nb, (avg_i, err_i) in enumerate(zip(averages, errors)):
             upper_conf, lower_conf = avg_i + err_i, avg_i - err_i
@@ -103,12 +103,12 @@ class Experiment:
         plt.xlabel('Episode')
         plt.xlim(1, self.nb_episodes)
         plt.ylim(0, )
-        plt.ylabel('Cumulative Reward')
+        plt.ylabel('Reward')
         plt.legend(frameon = False, loc = 'upper left')
-        plt.savefig(f"{self.exp_output_path}/Experiment_cumulative_reward_comparisons.png",
+        plt.savefig(f"{self.exp_output_path}/Experiment_reward_comparisons.png",
                     dpi=350, bbox_inches='tight')
         plt.close()
-        np.save(self.exp_output_path+'/'+'cumulative_reward_data.npy', cumulative_rewards)
+        np.save(self.exp_output_path+'/'+'reward_data.npy', rewards)
 
     # def plot_comparison_plots(self, exp_label, data, ):
 
@@ -229,11 +229,11 @@ class Experiment:
                     termination = obs[-1]
                 # update logs
                 Session_current.update_logs()
-                if verbose:
-                    print('| EXP: ' + str(exp_id+1) +
-                          ' | Trial: ' + str(trial + 1) +
-                          ' | Episode: ' + str(episode + 1) +
-                          ' | Reward = ' + str(obs[-2]) + ' |')
+                # if verbose:
+                #     print('| EXP: ' + str(exp_id+1) +
+                #           ' | Trial: ' + str(trial + 1) +
+                #           ' | Episode: ' + str(episode + 1) +
+                #           ' | Reward = ' + str(obs[-2]) + ' |')
                 # End of episode processing
                 Qvalues = Agent_current.Qfunction  # obtain q values for analysis
                 Session_current.add_value_to_record(Qvalues)
@@ -241,7 +241,9 @@ class Experiment:
                     Session_current.add_novelty_to_record(Agent_current.exploration_bonus)
             # End of trial processing
             Session_current.process_trial()
-
+            if verbose:
+                print('| EXP: ' + str(exp_id + 1) +
+                      ' | Trial: ' + str(trial + 1) + ' |')
         ## Session analysis
         if visualize_sessions:
             Analyze = Analysis(self.exp_output_path, exp_id,
