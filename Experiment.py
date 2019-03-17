@@ -69,13 +69,33 @@ class Experiment:
             self.multi_environment()
         else: # nb_agents > 1
             self.multi_agent()
+        self.get_legend_labels()
         ## Cross session analysis
         self.plot_comparison_visuals()
+
+    def get_legend_labels(self):
+        self.exp_labels = []
+        if self.exp_mode == 'multi-agent':
+            for agent_nb, agent in enumerate(self.agents):
+                label = f"Agent{agent_nb+1}: lr={agent['learning rate']} "
+                label = label + f"{agent['value update']}"
+                if agent['value update'] == 'TD':
+                    label = label + f"({agent['lambda']})"
+                label = label + f" {agent['exploration policy']}"
+                if agent['exploration policy'] == 'e-greedy':
+                    label = label + f"(e={agent['epsilon']}) "
+                if agent['learn model']:
+                    label = label + 'DynaQ '
+                if agent['add exploration bonus']:
+                    label = label + f"novelty(-{agent['reduction']})"
+
+                self.exp_labels.append(label)
+
 
     def plot_comparison_visuals(self):
         # insert correct label
         if self.exp_mode == 'multi-agent':
-            exp_label = 'Agent: '
+            exp_label = 'Agent '
         elif self.exp_mode == 'multi-env':
             exp_label = 'Environment: '
         else: # multi-agent, multi-env
@@ -84,7 +104,6 @@ class Experiment:
         self.plot_comparison_rewards(exp_label)
         self.plot_comparison_timesteps_til_terminate(exp_label)
         self.plot_comparison_steps_til_reward(exp_label)
-        print('Experiment-level comparison plots visualized.')
 
     def plot_comparison_rewards(self, exp_label, plot_raw_traces = True):
         rewards = self.all_cumulative_rewards
@@ -92,11 +111,10 @@ class Experiment:
         x = np.arange(1, self.nb_episodes + 1)
         averages = np.average(rewards, axis = 1)
         errors = np.std(rewards, axis = 1)
-
-        for nb, (avg_i, err_i) in enumerate(zip(averages, errors)):
+        for exp_nb, (avg_i, err_i) in enumerate(zip(averages, errors)):
             upper_conf, lower_conf = avg_i + err_i, avg_i - err_i
             plt.fill_between(x, lower_conf, upper_conf, alpha=0.2)
-            plt.plot(x, avg_i, linewidth=1.5, label=exp_label + str(nb + 1))
+            plt.plot(x, avg_i, linewidth=1.5, label= self.exp_labels[exp_nb])
         ax = plt.axes()
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
@@ -104,7 +122,7 @@ class Experiment:
         plt.xlim(1, self.nb_episodes)
         plt.ylim(0, )
         plt.ylabel('Reward')
-        plt.legend(frameon = False, loc = 'upper left')
+        plt.legend(frameon = False, loc = 'best', fontsize = 'small')
         plt.savefig(f"{self.exp_output_path}/Experiment_reward_comparisons.png",
                     dpi=300, bbox_inches='tight')
         plt.close()
@@ -118,6 +136,9 @@ class Experiment:
         plt.boxplot(np.transpose(all_steps), showmeans=True, whis = 'range')
         plt.xlabel('Agent')
         ax = plt.axes()
+        for exp_nb, label in enumerate(self.exp_labels):
+            plt.text(0, 1.1 - 0.05 *exp_nb, label, color='black', weight='roman',
+                     size='small', transform=ax.transAxes)
         ax.set_yscale('log')
         plt.ylabel('Steps until first reward encounter')
         plt.savefig(f"{self.exp_output_path}/Experiment_steps_till_reward_log.png",
@@ -138,17 +159,17 @@ class Experiment:
         averages = np.average(timeteps_per_episode, axis = 1)
         errors = np.std(timeteps_per_episode, axis = 1)
 
-        for nb, (avg_i, err_i) in enumerate(zip(averages, errors)):
+        for exp_nb, (avg_i, err_i) in enumerate(zip(averages, errors)):
             upper_conf, lower_conf = avg_i + err_i, avg_i - err_i
             plt.fill_between(x, lower_conf, upper_conf, alpha = 0.2)
-            plt.plot(x, avg_i, linewidth=1.5, label = exp_label + str(nb + 1))
+            plt.plot(x, avg_i, linewidth=1.5, label = f"{self.exp_labels[exp_nb]}")
         ax = plt.axes()
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         plt.xlabel('Episode')
         plt.xlim(1, self.nb_episodes)
         plt.ylabel('Timesteps Until Termination')
-        plt.legend(frameon = False, loc = 'upper left')
+        plt.legend(frameon = False, loc = 'best', fontsize = 'small')
         plt.savefig(f"{self.exp_output_path}/Experiment_timesteps_over_episodes_plot.png",
                     dpi=350, bbox_inches='tight')
         plt.close()
@@ -166,7 +187,7 @@ class Experiment:
 
     def multi_agent(self):
         '''
-        for experiments involving one environment, and multiple agents
+        for experiments involving one environment run with different agents
         '''
         print('Mode: multiple agents, single environment')
         self.exp_mode = 'multi-agent'
@@ -241,9 +262,10 @@ class Experiment:
                     Session_current.add_novelty_to_record(Agent_current.exploration_bonus)
             # End of trial processing
             Session_current.process_trial()
-            if verbose:
-                print('| EXP: ' + str(exp_id + 1) +
-                      ' | Trial: ' + str(trial + 1) + ' |')
+            if (trial + 1) % 50 == 0:
+                if verbose:
+                    print('| EXP: ' + str(exp_id + 1) +
+                          ' | Trial: ' + str(trial + 1) + ' |')
         ## Session analysis
         if visualize_sessions:
             Analyze = Analysis(self.exp_output_path, exp_id,

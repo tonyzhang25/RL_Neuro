@@ -14,7 +14,7 @@ agents = [
         'epsilon': 0,
         'learn model': False,
         'discount rate': 0.9,
-        'add exploration bonus': False,
+        'add exploration bonus': True,
         'reduction': 1
     },
     {
@@ -22,24 +22,35 @@ agents = [
         'value update': 'TD',
         'lambda': 0,
         'exploration policy': 'e-greedy',
-        'epsilon': 0.3,
+        'epsilon': 0,
         'learn model': False,
         'discount rate': 0.9,
-        'add exploration bonus': False,
-        'reduction': 1
+        'add exploration bonus': True,
+        'reduction': 0.5
     },
+    # {
+    #     'learning rate': lr,
+    #     'value update': 'TD',
+    #     'lambda': 0,
+    #     'exploration policy': 'e-greedy',
+    #     'epsilon': 0,
+    #     'learn model': False,
+    #     'discount rate': 0.9,
+    #     'add exploration bonus': True,
+    #     'reduction': 0.1
+    # },
     # To test additional agents, insert here
 ]
 
 # Environment spec variable
-environments = [
+env = [
     {
         'maze name': '4level_binary_maze',
         'number of levels': 4, # last level is terminal
-        # 'reward locations': {(3, 2): 100}, # index from 0
-        'change reward location': True,
-        'reward locations': {0: {(3,2): 100}, 100: {(3,3): 100}}, # change-episode, location, reward
-        'allow reversals': False
+        'reward locations': {(3, 2): 100}, # no reward switching
+        'change reward location': False,
+        # 'reward locations': {0: {(3,2): 100}, 100: {(3,3): 100}}, # change-episode, location (index from 0), reward
+        'allow reversals': True
     },
     # To test additional environments, insert here (must match with number of agents)
 ]
@@ -47,7 +58,7 @@ environments = [
 
 # Run experiment
 Experiment = Experiment(name = experiment_name,
-                        environments = environments,
+                        environments = env,
                         agents = agents,
-                        nb_episodes = 200,
+                        nb_episodes = 50,
                         nb_trials = 1000)

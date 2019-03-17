@@ -36,7 +36,7 @@ class Analysis:
             os.mkdir(self.sess_output_path)
 
     def visualize(self, dpi = 300):
-        print('\nAnalyzing session data..')
+        print('\nLogging experiment data..\n\n')
         self.compare_total_steps_till_reward(dpi)
         self.visualize_reward_all_episodes(dpi)
         self.visualize_final_states(dpi)
@@ -67,8 +67,8 @@ class Analysis:
                 plt.savefig(self.sess_output_path + self.Map.name + '_t' +
                             str(trial_nb) + '_reward_record.png',
                             dpi = dpi, bbox_inches = 'tight')
-            plt.close()
-        print('Reward log visualized.')
+                print('Reward log visualized.')
+                plt.close()
 
     def visualize_final_states(self, dpi, plot = False):
         list_of_final_states = self.Map.states_by_level[-1]
@@ -93,7 +93,7 @@ class Analysis:
                 plt.savefig(self.sess_output_path + self.Map.name + '_t' + str(trial_nb) +
                             '_FinalState.png', dpi = dpi, bbox_inches = 'tight')
                 plt.close()
-        print('Final State Visited visualized.')
+                print('Final states visited visualized.')
 
     def visualize_timesteps_per_episode(self, dpi, plot = False):
         for trial_nb, trial_i in enumerate(self.state_obs_history):
@@ -117,8 +117,8 @@ class Analysis:
                             str(trial_nb) + '_timesteps_per_episode.png',
                             dpi = dpi, bbox_inches = 'tight')
                 plt.close()
+                print('Timesteps per episode plotted.')
             self.all_timesteps_trial.append(episodes_length)
-        print('Timesteps per episode plotted.')
 
     def compare_total_steps_till_reward(self, dpi):
         ''' compute how many total steps it takes until first reward is encountered
@@ -198,9 +198,9 @@ class Analysis:
                 plt.savefig(self.sess_output_path + self.Map.name + '_t' + str(trial_nb) +
                             '_value_across_learning.png', dpi = dpi, bbox_inches = 'tight')
                 plt.close()
+                print('Value learning visualized.')
             self.value_matrix = value_matrix
             # USEFUL FOR DEBUGGING: print(np.max(value_matrix))
-        print('Value learning visualized.')
 
     def visualize_state_novelty(self, dpi, plot = False):
         '''
@@ -229,9 +229,9 @@ class Analysis:
                 plt.savefig(self.sess_output_path + self.Map.name + '_t' + str(trial_nb) +
                             '_novelty_across_learning.png', dpi = dpi, bbox_inches = 'tight')
                 plt.close()
+                print('Novelty visualized.')
             self.value_matrix = novelty_matrix
             # USEFUL FOR DEBUGGING: print(np.max(value_matrix))
-        print('Novelty visualized.')
 
 
 
