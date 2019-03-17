@@ -14,7 +14,7 @@ agents = [
         'epsilon': 0,
         'learn model': False,
         'discount rate': 0.9,
-        'add exploration bonus': True,
+        'add exploration bonus': False,
         'reduction': 1
     },
     {
@@ -25,19 +25,9 @@ agents = [
         'epsilon': 0.3,
         'learn model': False,
         'discount rate': 0.9,
-        'add exploration bonus': True,
+        'add exploration bonus': False,
         'reduction': 1
     },
-    # {
-    #     'learning rate': lr,
-    #     'value update': 'TD',
-    #     'lambda': 0.1,
-    #     'exploration policy': 'e-greedy',
-    #     'epsilon': 0,
-    #     'learn model': False,
-    #     'discount rate': 0.9,
-    #     'add exploration bonus': False
-    # },
     # To test additional agents, insert here
 ]
 
@@ -48,16 +38,10 @@ environments = [
         'number of levels': 4, # last level is terminal
         # 'reward locations': {(3, 2): 100}, # index from 0
         'change reward location': True,
-        'reward locations': {0: {(3,2): 100}, 50: {(3,3): 100}}, # change-episode, location, reward
-        'allow reversals': True
+        'reward locations': {0: {(3,2): 100}, 100: {(3,3): 100}}, # change-episode, location, reward
+        'allow reversals': False
     },
-    # # To test additional environments, insert here (must match with number of agents)
-    # {
-    #     'maze name': '5level_binary_maze',
-    #     'number of levels': 5,  # last level is terminal
-    #     'reward locations': {(4, 4): 1},  # index from 0
-    #     'allow reversals': True
-    # }
+    # To test additional environments, insert here (must match with number of agents)
 ]
 
 
@@ -65,5 +49,5 @@ environments = [
 Experiment = Experiment(name = experiment_name,
                         environments = environments,
                         agents = agents,
-                        nb_episodes = 100,
-                        nb_trials = 500)
+                        nb_episodes = 200,
+                        nb_trials = 1000)

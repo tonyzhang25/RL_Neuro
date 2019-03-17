@@ -81,12 +81,12 @@ class Experiment:
         else: # multi-agent, multi-env
             exp_label = 'Agent/Env: '
 
-        self.plot_comparison_cumulative_rewards(exp_label)
+        self.plot_comparison_rewards(exp_label)
         self.plot_comparison_timesteps_til_terminate(exp_label)
         self.plot_comparison_steps_til_reward(exp_label)
         print('Experiment-level comparison plots visualized.')
 
-    def plot_comparison_cumulative_rewards(self, exp_label):
+    def plot_comparison_rewards(self, exp_label, plot_raw_traces = True):
         rewards = self.all_cumulative_rewards
         plt.figure(figsize=(6, 4))
         x = np.arange(1, self.nb_episodes + 1)
@@ -95,8 +95,8 @@ class Experiment:
 
         for nb, (avg_i, err_i) in enumerate(zip(averages, errors)):
             upper_conf, lower_conf = avg_i + err_i, avg_i - err_i
-            plt.fill_between(x, lower_conf, upper_conf, alpha = 0.2)
-            plt.plot(x, avg_i, linewidth=1.5, label = exp_label + str(nb + 1))
+            plt.fill_between(x, lower_conf, upper_conf, alpha=0.2)
+            plt.plot(x, avg_i, linewidth=1.5, label=exp_label + str(nb + 1))
         ax = plt.axes()
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
@@ -106,7 +106,7 @@ class Experiment:
         plt.ylabel('Reward')
         plt.legend(frameon = False, loc = 'upper left')
         plt.savefig(f"{self.exp_output_path}/Experiment_reward_comparisons.png",
-                    dpi=350, bbox_inches='tight')
+                    dpi=300, bbox_inches='tight')
         plt.close()
         np.save(self.exp_output_path+'/'+'reward_data.npy', rewards)
 
