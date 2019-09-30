@@ -1,8 +1,8 @@
 # Tabular RL Repo 
 
-For animal Behavior Modelling in binary maze. Implemented models include Q-learning, TD(lambda), Dyna-Q, Monte-Carlo, novelty-based exploration.
+For animal behavior modeling in binary tree maze. Implemented models include Q-learning, TD(lambda), Dyna-Q, Monte-Carlo, novelty-based value propagation.
 
-Requirements: Python 3.6, numpy
+Requirements: Python 3.6
 
 To run experiments, first clone the repo (master branch), then modify dictionary parameters under run.py and execute.
 Maze maps and visualizations are saved under /data.
