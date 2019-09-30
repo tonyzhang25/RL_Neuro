@@ -1,5 +1,5 @@
 '''
-Environment object for RL agent
+Binary maze environment object for RL agent
 
 Assumptions:
 - episode terminates at the end branching point, regardless of rewarded or not.
@@ -16,8 +16,8 @@ Variables:
     Transition matrix: State(t+1) = state_transition_matrix[State(t), action(t)]
     All variables are fixed. Transition matrix is instantiated based on parameter 'levels'
 
-Each state ALWAYS has 2 actions. For custom mazes with arbitrary action space in grid space,
-use Maze.py
+Each state ALWAYS has 2 or 3 actions (depending on if reversal is allowed.
+For custom mazes with arbitrary action space in grid space, use Maze.py
 
 Note: Nothing is stored / modified in this object during learning.
 
@@ -28,7 +28,7 @@ import matplotlib.image as mpimg
 import os, sys, glob
 
 
-class Maze:
+class BinaryMaze:
 
     def __init__(self, name, nb_levels, reward_location, allow_reversals = True, save = False):
         assert nb_levels > 1
@@ -47,7 +47,7 @@ class Maze:
         self.start_state = 0
         if save:
             self.save_map(name)
-        self.set_termination_states()
+        self.set_termination_states(reward_state = True, start_state= True)
 
     def init_save_path(self, path):
         self.output_path = path
@@ -78,29 +78,30 @@ class Maze:
         #             self.state_trans_matrix[state_j] = [next_state_a0, next_state_a1]
         # ### allow reversals
         # if self.allow_reversals:
+        # todo: fix transition from leaf node for conditions allowing reversal
         for level_i in range(self.nb_levels):
-            if level_i < self.nb_levels - 1:  # before reaching final layer
-                for pos, state_j in enumerate(self.states_by_level[level_i]):
-                    next_states = []
+            for pos, state_j in enumerate(self.states_by_level[level_i]):
+                next_states = []
+                if level_i < self.nb_levels - 1:  # before reaching final layer
                     next_level = level_i + 1
                     next_state_a0_position = pos * 2
                     next_state_a0 = self.states_by_level[next_level][next_state_a0_position]
                     next_state_a1 = next_state_a0 + 1
                     next_states.append(next_state_a0) # next level, action L
                     next_states.append(next_state_a1) # next level, action R
-                    if self.allow_reversals:
-                        if level_i > 0:
-                            if pos % 2 == 0:
-                                prev_state_pos = pos // 2
-                            else:
-                                prev_state_pos = (pos - 1) // 2
-                            prev_state = self.states_by_level[level_i - 1][prev_state_pos]
+                else: # last level. no more next states, only previous
+                    next_states.extend([state_j, state_j]) # todo: verify statistics with this
+                if self.allow_reversals:
+                    if level_i > 0:
+                        if pos % 2 == 0:
+                            prev_state_pos = pos // 2
                         else:
-                            prev_state = 0
-                        next_states.append(prev_state)
-                    self.state_trans_matrix[state_j] = next_states
-        # import pdb
-        # pdb.set_trace()
+                            prev_state_pos = (pos - 1) // 2
+                        prev_state = self.states_by_level[level_i - 1][prev_state_pos]
+                    else:
+                        prev_state = 0
+                    next_states.append(prev_state)
+                self.state_trans_matrix[state_j] = next_states
 
     def init_reward(self):
         self.state_reward_matrix = np.zeros(self.nb_states)
@@ -110,9 +111,18 @@ class Maze:
             state = self.states_by_level[level][pos]
             self.state_reward_matrix[state] = self.reward_locations[reward_loc]
 
-    def set_termination_states(self):
+    def set_termination_states(self, reward_state = True, leaf_nodes = False, start_state = False):
         # set last level states to termination
-        self.termination_states = self.states_by_level[-1]
+        self.termination_states = []
+        if reward_state:
+            # only set rewarding state as terminal
+            self.termination_states.extend(np.where(self.state_reward_matrix != 0)[0])
+        if leaf_nodes:
+            # set all states at lowest level to be terminal
+            self.termination_states.extend(self.states_by_level[-1])
+        if start_state:
+            start_state = 0
+            self.termination_states = np.append(self.termination_states, start_state)
 
     def save_map(self, name):
         self.init_save_path('data/maps/')

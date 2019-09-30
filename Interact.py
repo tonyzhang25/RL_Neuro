@@ -22,7 +22,8 @@ Properties:
 '''
 import numpy as np
 from copy import deepcopy
-from Binary_Maze import *
+from Binary_Maze import BinaryMaze
+from Spatial_Maze import SpatialMaze
 import pdb
 
 
@@ -34,10 +35,23 @@ class Interact:
         These variables are for tracking progress for evaluation / debug purposes.
         '''
         self.maze_properties = maze_properties
+        if self.maze_properties['maze type'] in ['binary', 'Binary']:
+            self.maze_type = 'binary'
+        elif self.maze_properties['maze type'] in ['spatial', 'Spatial']:
+            self.maze_type = 'spatial'
+        else:
+            raise Exception('Error: maze type not found')
         self.properties = init_properties
+        self.init_log_data()
+        self.termination_condition = init_properties['episode_termination']
+        self.episode_nb = 0
+        if self.termination_condition == 'max_episode':
+            self.max_steps = init_properties['max_steps'] # integer referring to max number of steps
+
+    def init_log_data(self):
         ## instantiate history variables for evaluation / debugging
-        self.state_act_history = [] # record of agent's state and picked actions
-        self.state_obs_history = [] # record agent's observed state history (action spaces in current case)
+        self.state_act_history = []  # record of agent's state and picked actions
+        self.state_obs_history = []  # record agent's observed state history (action spaces in current case)
         self.state_act_history_episodes = []
         self.state_obs_history_episodes = []
         self.state_act_history_trials = []
@@ -46,10 +60,6 @@ class Interact:
         self.agent_qvalues_history_trials = []
         self.agent_novelty_history_episodes = []
         self.agent_novelty_history_trials = []
-        self.termination_condition = init_properties['episode_termination']
-        self.episode_nb = 0
-        if self.termination_condition == 'max_episode':
-            self.max_steps = init_properties['max_steps'] # integer referring to max number of steps
 
     def init_episode(self, episode):
         self.episode_nb += 1
@@ -61,9 +71,6 @@ class Interact:
         self.current_state = self.init_state
         reward = self.check_reward()
         term = self.check_termination()
-        if term:
-            ### end episode ##
-            print('* Termination condition satisfied.')
         output = self.return_observation(reward, term)
         return output
 
@@ -82,25 +89,31 @@ class Interact:
 
     def create_maze(self, episode):
         mazeName = self.maze_properties['maze name']
-        nb_levels = self.maze_properties['number of levels']
         reward_location = self.maze_properties['reward locations']
-        allow_reversals = self.maze_properties['allow reversals']
-        if self.maze_properties['change reward location']:
-            change_episodes = list(reward_location.keys())
-            change_episodes.reverse()
-            for ep_change in change_episodes:
-                if episode >= ep_change:
-                    reward_location = reward_location[ep_change]
-                    break
-        self.Maze = Maze(mazeName, nb_levels=nb_levels, reward_location=reward_location,
-                         allow_reversals=allow_reversals)
+        if self.maze_type == 'binary':
+            nb_levels = self.maze_properties['number of levels']
+            allow_reversals = self.maze_properties['allow reversals']
+            if self.maze_properties['change reward location']:
+                change_episodes = list(reward_location.keys())
+                change_episodes.reverse()
+                for ep_change in change_episodes:
+                    if episode >= ep_change:
+                        reward_location = reward_location[ep_change]
+                        break
+            self.Maze = BinaryMaze(mazeName, nb_levels=nb_levels, reward_location=reward_location,
+                                   allow_reversals=allow_reversals)
+        elif self.maze_type == 'spatial':
+            # todo: think about how to implment reward changes for spatial mazes
+            # as currently it's implemented within Maze, not outside of it
+            self.Maze = SpatialMaze(mazeName,
+                                    self.maze_properties['map'],
+                                    reward_location,
+                                    self.maze_properties['start position'])
         self.action_space = np.arange(self.Maze.action_space)  # Based on environment
-
 
     def update_logs(self):
         self.state_act_history_episodes.append(self.state_act_history)
         self.state_obs_history_episodes.append(self.state_obs_history)
-
 
     def step(self, action, verbose = False):
         # get new state from environment class
@@ -153,6 +166,8 @@ class Interact:
 
     def check_reward(self):
         reward = self.Maze.state_reward_matrix[self.current_state]
+
+
         return reward
 
     def check_termination(self):

@@ -189,7 +189,7 @@ class Experiment:
         '''
         for experiments involving one environment run with different agents
         '''
-        print('Mode: multiple agents, single environment')
+        print('Mode: single / multiple agents, single environment')
         self.exp_mode = 'multi-agent'
         env = self.environments[0]
         self.init_cross_session_data(len(self.agents))
@@ -242,7 +242,7 @@ class Experiment:
             for episode in range(self.nb_episodes):
                 # Start episode
                 obs = Session_current.init_episode(episode)
-                action = Agent_current.step(obs)
+                action = Agent_current.step(obs, can_terminate = False)
                 termination = False
                 while termination == False:  # assert termination condition = False
                     obs = Session_current.step(action)

@@ -96,13 +96,21 @@ class Agent:
         else:
             self.use_memory = False
 
-    def step(self, env_obs):
+    def step(self, env_obs, can_terminate = True):
         '''
         :param obs:
          env_obs[0] = action space (what actions agent could take from environment)
          env_obs[1] = state (tabular)
         '''
         agent_obs = self.determine_agent_state(env_obs)
+        self.curr_state = agent_obs[1]  # current set to integer state (0,1,2,...)
+        self.curr_actionspace = agent_obs[0]
+        self.reward = agent_obs[2]
+        if can_terminate:
+            self.terminate = agent_obs[-1]
+        else:
+            self.terminate = False
+        # start algorithm
         if self.learn_mode == 'TD':
             action = self.step_TD(agent_obs)
         elif self.learn_mode == 'MC':
@@ -124,8 +132,9 @@ class Agent:
             if bonus_reduced < 0: bonus_reduced = 0
             self.exploration_bonus[self.curr_state, action] = bonus_reduced
 
-    def increase_state_novelty(self, action, min_novelty = 0, max_novelty = 1, rate = 0.2):
+    def increase_state_novelty(self, action, max_novelty = 1, rate = 0.1):
         # increase novelty for all state action pairs NOT selected
+        # acts as memory decay (novelty increase back to 1)
         curr_state_action = (self.curr_state, action)
         all_state_actions = list(self.exploration_bonus.keys())
         all_state_actions.remove(curr_state_action)
@@ -135,24 +144,19 @@ class Agent:
             bonus_new =+ rate * diff
             self.exploration_bonus[state_action] = bonus_new
 
-    def update_novelty(self, action, reduction):
-        # import pdb; pdb.set_trace()
+    def update_novelty(self, action, reduction, novelty_increase = False):
         if action is not None: # not terminal
             # reduce novelty for current state-action
             self.reduce_state_novelty(action, reduction = reduction)
             # increase novelty for all other pairs
-            # self.increase_state_novelty(action)
+            if novelty_increase:
+                self.increase_state_novelty(action, rate = 0.1)
 
     def step_TD(self, obs):
-        self.curr_state = obs[1]  # current set to integer state (0,1,2,...)
-        self.curr_actionspace = obs[0]
-        self.reward = obs[2]
-        self.terminate = obs[-1]
         action = self.pick_action()
         # update novelty below. Must be done before value updates occurs
         if self.parameters['add exploration bonus']:
-            reduction = self.parameters['reduction']
-            self.update_novelty(action, reduction)
+            self.update_novelty(action, self.parameters['reduction'])
         if self.use_memory:
             # general purpose memory for use in eligibility trace
             self.add_memory(obs, action)
@@ -206,10 +210,6 @@ class Agent:
 
 
     def step_MC(self, obs):
-        self.curr_actionspace = obs[0]
-        self.curr_state = obs[1]  # current set to integer state (0,1,2,...)
-        self.reward = obs[2]
-        self.terminate = obs[-1]
         # ONLY running if prev_state field is populated!
         action = self.pick_action()
         # if self.Model is not None:
@@ -279,8 +279,6 @@ class Agent:
                     self.Qfunction[prev_state, prev_action] += \
                         self.learn_rate * eligibility_t * delta_target
                     eligibility_t *= self.TD_lambda * self.discount_rate
-
-
 
     def learn_MC_value(self):
         memory_episode = self.memory[-1] # pull out last episode memory
@@ -367,10 +365,19 @@ class Agent:
                     init_value = 0
                 self.Qfunction[self.curr_state, a] = init_value
 
-    def init_novelty(self, actionspace, max_bonus = 1):
+    def init_novelty(self, actionspace, max_bonus = 1, reduce_for_reversal = True):
         '''
         This function ensures that all the e(s,a) have values attached to them. If not, assign.
+        reduce_for_reversal: reduce novelty if action takes agent back to previous state.
         '''
+        flip_actions = {0: 1,
+                        1: 0,
+                        2: 3,
+                        3: 2} # map previous actions to curr actions that would take it there
+        if reduce_for_reversal and self.prev_action is not None:
+            reverse_action = flip_actions[self.prev_action]
+            if (self.curr_state, reverse_action) not in self.exploration_bonus.keys():
+                self.exploration_bonus[self.curr_state, reverse_action] = max_bonus - self.parameters['reduction']
         for a in actionspace:
             if (self.curr_state, a) not in self.exploration_bonus.keys():
                 self.exploration_bonus[self.curr_state,a] = max_bonus

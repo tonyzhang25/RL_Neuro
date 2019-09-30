@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os, sys, glob
 import math
+import pickle
 
 class Analysis:
     '''
@@ -15,7 +16,7 @@ class Analysis:
     Cross session comparisons are implemented under Experiment.py
     '''
 
-    def __init__(self, exp_path, sess_id, Maze, Interact):
+    def __init__(self, exp_path, sess_id, Maze, Interact, save_log = True):
         self.exp_path = exp_path
         self.sess_id = sess_id
         self.Map = Maze
@@ -24,8 +25,11 @@ class Analysis:
         # History of combined Interact output to Agent
         self.state_obs_history = Interact.state_obs_history_trials
         self.value_history = Interact.agent_qvalues_history_trials
+        self.maze_type = Interact.maze_type
         self.novelty_history = Interact.agent_novelty_history_trials
         self.init_sub_session_path()
+        if save_log:
+            pickle.dump(Interact.state_act_history_trials, open(f'{self.sess_output_path}/state_act_history.p', 'wb'))
         self.cumulative_rewards = [] # for all trials
         self.all_timesteps_trial = [] # for the entire trial
 
@@ -39,7 +43,8 @@ class Analysis:
         print('\nLogging experiment data..\n\n')
         self.compare_total_steps_till_reward(dpi)
         self.visualize_reward_all_episodes(dpi)
-        self.visualize_final_states(dpi)
+        if self.maze_type == 'binary':
+            self.visualize_final_states(dpi)
         self.log_reward(dpi = dpi)
         self.visualize_state_values(dpi)
         self.visualize_state_novelty(dpi)
